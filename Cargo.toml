@@ -1,0 +1,15 @@
+[package]
+name = "egui_dialogs"
+version = "0.1.0"
+edition = "2021"
+description = "Platform-agnostic, customizable dialogs for egui library."
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/a-littlebit/egui_dialogs"
+repository = "https://github.com/a-littlebit/egui_dialogs"
+readme = "README.md"
+
+[dependencies]
+eframe = "0.28.1"
+egui = "0.28.1"
+egui_extras = { version = "0.28.1", features = ["all_loaders"] }
+sys-locale = "0.3.1"
