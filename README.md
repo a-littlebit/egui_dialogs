@@ -2,7 +2,7 @@
 
 Platform-agnostic, customizable dialogs for egui library.
 
-![](./examples/info_dialog.png "Information Dialog Example")
+![](examples/info_dialog.png "Information Dialog Example")
 
 ## Quick start
 
