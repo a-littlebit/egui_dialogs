@@ -301,7 +301,7 @@ impl Dialogs<'_> {
                 already_closed,
                 mask_rect: ctx.screen_rect() - self.mask_margin,
             };
-            if dialog.update(ctx, &update_info) {
+            if dialog.update(ctx, &update_info) && !already_closed {
                 let closed_dialog = self.dialogs.pop_front();
                 if self.animation.is_some() {
                     self.fading_dialog = closed_dialog;

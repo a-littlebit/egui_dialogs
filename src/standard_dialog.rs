@@ -229,7 +229,7 @@ where Reply: Clone {
         } = self;
 
         let mut reply = None;
-        let mut open = true;
+        let mut open = !update_info.already_closed;
 
         let frame = egui::Frame::window(&ctx.style())
             .inner_margin(16.);
