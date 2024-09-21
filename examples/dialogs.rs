@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
-use egui::{Align2, CentralPanel, Context, Id, Window};
-use egui_dialogs::{Dialog, DialogDetails, Dialogs, StandardReply};
+use egui::{Align2, CentralPanel, Context, Window};
+use egui_dialogs::{Dialog, DialogDetails, DialogUpdateInfo, Dialogs, StandardReply};
 
 fn main() -> Result<(), eframe::Error> {
   // Create native window
@@ -191,7 +191,7 @@ impl NameConfirmDialog {
 
 // implement dialog logic
 impl Dialog<String> for NameConfirmDialog {
-  fn show(&mut self, ctx: &Context, _id: Option<Id>) -> Option<String> {
+  fn show(&mut self, ctx: &Context, _: &DialogUpdateInfo) -> Option<String> {
     // return None if the user hasn't replied
     let mut res = None;
 

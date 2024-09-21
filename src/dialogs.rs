@@ -1,13 +1,34 @@
 use std::collections::VecDeque;
 
-use egui::{Color32, Id, LayerId, Margin, Rounding, Sense, Ui, UiStackInfo};
+use egui::{Color32, Id, LayerId, Margin, Rect, Rounding, Sense, Ui, UiStackInfo};
 
 use crate::*;
+
+/// Information about the current dialog update.
+pub struct DialogUpdateInfo {
+    /// The updated dialog id if there is one.
+    pub dialog_id: Option<Id>,
+
+    /// The current animation function.
+    /// If None, the dialog will not be animated.
+    pub animation: Option<fn(f32) -> f32>,
+
+    /// The current opacity of the dialog.
+    /// Used for animation.
+    pub opacity: f32,
+
+    /// Whether the dialog has been closed.
+    /// If animation is enabled, this will be true if the dialog is fading out.
+    pub already_closed: bool,
+
+    /// The dialog's mask rect.
+    pub mask_rect: Rect,
+}
 
 /// Abstraction over dialog details with different reply types.
 pub trait AbstractDialog {
     /// Paint the current frame and return whether the dialog has been replied.
-    fn update(&mut self, ctx: &egui::Context) -> bool;
+    fn update(&mut self, ctx: &egui::Context, update_info: &DialogUpdateInfo) -> bool;
 
     /// Return the mask color if there is one.
     fn mask(&self) -> Option<Color32>;
@@ -16,8 +37,8 @@ pub trait AbstractDialog {
 }
 
 impl<'a, Reply> AbstractDialog for DialogDetails<'a, Reply> {
-    fn update(&mut self, ctx: &egui::Context) -> bool {
-        match self.dialog.show(ctx, self.id) {
+    fn update(&mut self, ctx: &egui::Context, update_info: &DialogUpdateInfo) -> bool {
+        match self.dialog.show(ctx, update_info) {
             Some(reply) => {
                 self.handler.take().map(|handler| handler(reply));
                 true
@@ -64,8 +85,19 @@ impl<'a, Reply> AbstractDialog for DialogDetails<'a, Reply> {
 /// ```
 pub struct Dialogs<'a> {
     dialogs: VecDeque<Box<dyn AbstractDialog + 'a>>,
-    mask_margin: Margin,
-    mask_rounding: Rounding
+    
+    /// The margin of the mask.
+    /// This is useful if your window has a transparent margin or shadow.
+    pub mask_margin: Margin,
+    /// The rounding of the mask.
+    /// This is useful if your window has rounded corners.
+    pub mask_rounding: Rounding,
+    
+    /// The animation function.
+    /// Set to None to disable animation.
+    pub animation: Option<fn(f32) -> f32>,
+    
+    fading_dialog: Option<Box<dyn AbstractDialog + 'a>>,
 }
 
 impl Dialogs<'_> {
@@ -75,22 +107,40 @@ impl Dialogs<'_> {
             dialogs: VecDeque::new(),
             mask_margin: Margin::ZERO,
             mask_rounding: Rounding::ZERO,
+            animation: Some(egui::emath::easing::cubic_out),
+            fading_dialog: None,
         }
     }
 
     #[inline]
-    /// Change the margin of the mask.
-    /// This is useful if your window has a transparent margin or shadow.
     pub fn mask_margin(mut self, margin: impl Into<Margin>) -> Self {
         self.mask_margin = margin.into();
         self
     }
 
     #[inline]
-    /// Change the rounding of the mask.
-    /// This is useful if your window has rounded corners.
     pub fn mask_rounding(mut self, rounding: impl Into<Rounding>) -> Self {
         self.mask_rounding = rounding.into();
+        self
+    }
+
+    pub fn animate(mut self, animation: Option<fn(f32) -> f32>) -> Self {
+        self.animation = animation;
+        if animation.is_none() && self.fading_dialog.is_some() {
+            self.fading_dialog = None;
+        }
+        self
+    }
+
+    pub fn animated(mut self, is_animated: bool) -> Self {
+        if is_animated {
+            if self.animation.is_none() {
+                self.animation = Some(egui::emath::easing::cubic_out);
+            }
+        } else {
+            self.animation = None;
+            self.fading_dialog = None;
+        }
         self
     }
 }
@@ -160,17 +210,36 @@ impl<'a> Dialogs<'a> {
 }
 
 impl Dialogs<'_> {
+    const ID_NAME: &'static str = "dialog_mask";
+    
     /// Paint a mask with the given color.
     /// This will intercept all user interactions with background.
-    pub fn show_mask(&self, ctx: &egui::Context, color: Color32) {
+    /// Returns the painted opacity.
+    pub fn show_mask(&self, ctx: &egui::Context, color: Color32, dialog_on: bool) -> f32 {
+        let id = Id::new((ctx.viewport_id(), Self::ID_NAME));
+        
+        let how_on = match self.animation {
+            Some(easing) => {
+                let value = ctx.animate_bool_with_easing(
+                    id,
+                    dialog_on,
+                    easing
+                );
+                if value == 0. {
+                    return 0.;
+                }
+                value
+            },
+            None => if dialog_on { 1. } else { return 0.; },
+        };
+        
         let layer_id = LayerId {
             order: egui::Order::PanelResizeLine,
-            id: Id::new("dialog_mask"),
+            id,
         };
-        let id = Id::new((ctx.viewport_id(), "dialog_mask"));
 
         let mask_rect = ctx.screen_rect() - self.mask_margin;
-        let mut panel_ui = Ui::new(
+        let mut mask_ui = Ui::new(
             ctx.clone(),
             layer_id,
             id,
@@ -179,21 +248,64 @@ impl Dialogs<'_> {
             UiStackInfo::default(), // set by show_inside_dyn
         );
 
-        panel_ui.painter().rect_filled(mask_rect, self.mask_rounding, color);
+        mask_ui.set_opacity(how_on);
+
+        mask_ui.painter().rect_filled(mask_rect, self.mask_rounding, color);
         // sense all interactions to forbid interact with background widgets
-        panel_ui.allocate_rect(mask_rect, Sense::click_and_drag());
+        mask_ui.allocate_rect(mask_rect, Sense::click_and_drag());
+        
+        how_on
     }
 
     /// Show the currently open dialog if there is one.
     pub fn show(&mut self, ctx: &egui::Context) {
-        if let Some(dialog) = self.dialogs.front() {
-            if let Some(mask) = dialog.mask() {
-                self.show_mask(ctx, mask);
+        let on = !self.dialogs.is_empty() && self.fading_dialog.is_none();
+        let how_on = if on || self.fading_dialog.is_some() {
+            let mask_color = match &self.fading_dialog {
+                Some(fading_dialog) => fading_dialog.mask(),
+                None => self.dialogs.front().unwrap().mask(), // self.dialogs mustn't be empty here
+            };
+            if let Some(mask_color) = mask_color {
+                self.show_mask(ctx, mask_color, on)
+            } else if let Some(animation) = self.animation {
+                ctx.animate_bool_with_easing(
+                    Id::new((ctx.viewport_id(), Self::ID_NAME)),
+                    on,
+                    animation
+                )
+            } else {
+                1.
             }
+        } else {
+            0.
+        };
+
+        if how_on == 0. {
+            if self.fading_dialog.is_some() {
+                self.fading_dialog = None;
+                ctx.request_repaint();
+            }
+            return;
         }
-        if let Some(dialog) = self.dialogs.front_mut() {
-            if dialog.update(ctx) {
-                self.dialogs.pop_front();
+
+        let (dialog, already_closed) = match self.fading_dialog {
+            Some(ref mut fading_dialog) => (Some(fading_dialog), true),
+            None => (self.dialogs.front_mut(), false),
+        };
+        
+        if let Some(dialog) = dialog {
+            let update_info = DialogUpdateInfo {
+                dialog_id: dialog.id(),
+                animation: self.animation,
+                opacity: how_on,
+                already_closed,
+                mask_rect: ctx.screen_rect() - self.mask_margin,
+            };
+            if dialog.update(ctx, &update_info) {
+                let closed_dialog = self.dialogs.pop_front();
+                if self.animation.is_some() {
+                    self.fading_dialog = closed_dialog;
+                }
             }
         }
     }

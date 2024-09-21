@@ -1,4 +1,4 @@
-use egui::{include_image, vec2, Align, Align2, Id, Image, ImageSource, Label, Layout, Rect, Sense};
+use egui::{include_image, vec2, Align, Align2, Image, ImageSource, Label, Layout, Rect, Sense};
 use sys_locale::get_locales;
 
 use crate::*;
@@ -220,7 +220,7 @@ impl<'i> StandardDialog<'i, StandardReply> {
 
 impl<'i, Reply> Dialog<Reply> for StandardDialog<'i, Reply>
 where Reply: Clone {
-    fn show(&mut self, ctx: &egui::Context, id: Option<Id>) -> Option<Reply> {
+    fn show(&mut self, ctx: &egui::Context, update_info: &DialogUpdateInfo) -> Option<Reply> {
         let Self {
             title,
             content,
@@ -239,7 +239,10 @@ where Reply: Clone {
             .resizable(false)
             .pivot(Align2::CENTER_CENTER)
             .frame(frame)
-            .id(id.unwrap_or("StandardDialog".into()))
+            .id(update_info.dialog_id.unwrap_or("StandardDialog".into()))
+            .constrain_to(update_info.mask_rect)
+            .fade_in(update_info.animation.is_some())
+            .fade_out(update_info.animation.is_some())
             .open(&mut open)
             .show(ctx, |ui| {
                 ui.spacing_mut().item_spacing = vec2(8., 8.);

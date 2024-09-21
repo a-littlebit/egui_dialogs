@@ -194,10 +194,10 @@
 //! # }
 //! #
 //! use egui::{Align2, Id, Window};
-//! use egui_dialogs::Dialog;
+//! use egui_dialogs::{Dialog, DialogUpdateInfo};
 //! 
 //! impl Dialog<String> for NameConfirmDialog {
-//!   fn show(&mut self, ctx: &egui::Context, _id: Option<Id>) -> Option<String> {
+//!   fn show(&mut self, ctx: &egui::Context, _: &DialogUpdateInfo) -> Option<String> {
 //!     // return None if the user hasn't replied
 //!     let mut res = None;
 //!
@@ -228,10 +228,10 @@
 //! # }
 //! #
 //! # use egui::{Align2, Id, Window};
-//! # use egui_dialogs::{Dialog, DialogDetails};
+//! # use egui_dialogs::{Dialog, DialogDetails, DialogUpdateInfo};
 //! # 
 //! # impl Dialog<String> for NameConfirmDialog {
-//! #   fn show(&mut self, ctx: &egui::Context, _id: Option<Id>) -> Option<String> {
+//! #   fn show(&mut self, ctx: &egui::Context, _: &DialogUpdateInfo) -> Option<String> {
 //! #     // return None if the user hasn't replied
 //! #     let mut res = None;
 //! #

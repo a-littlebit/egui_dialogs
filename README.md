@@ -133,11 +133,11 @@ Then implement the `Dialog` trait to implement dialog logic
 with a generic type parameter to specify the dialog reply type:
 
 ```rust
-use egui::{Align2, Id, Window};
-use egui_dialogs::Dialog;
+use egui::{Align2, Window};
+use egui_dialogs::{Dialog, DialogUpdateInfo};
 
 impl Dialog<String> for NameConfirmDialog {
-  fn show(&mut self, ctx: &egui::Context, _id: Option<Id>) -> Option<String> {
+  fn show(&mut self, ctx: &egui::Context, _: &DialogUpdateInfo) -> Option<String> {
     // return None if the user hasn't replied
     let mut res = None;
 
