@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
-use egui::{Align2, CentralPanel, Context, Window};
-use egui_dialogs::{Dialog, DialogDetails, DialogUpdateInfo, Dialogs, StandardReply};
+use egui::{vec2, CentralPanel, Context};
+use egui_dialogs::{dialog_window, Dialog, DialogContext, DialogDetails, Dialogs, StandardReply};
 
 fn main() -> Result<(), eframe::Error> {
   // Create native window
@@ -25,6 +25,9 @@ fn main() -> Result<(), eframe::Error> {
         // 
         // deprecated for crates.io uploading package size limit
         // setup_custom_fonts(&cc.egui_ctx);
+
+        // setup custom style
+        setup_style(&cc.egui_ctx);
         
         // Create the app instance
         Ok(Box::new(DialogApp::new(cc)))
@@ -63,6 +66,15 @@ fn main() -> Result<(), eframe::Error> {
 //     // Tell egui to use these fonts:
 //     ctx.set_fonts(fonts);
 // }
+
+fn setup_style(ctx: &Context) {
+    ctx.style_mut(|s| {
+        s.spacing.item_spacing = vec2(8., 12.);
+        s.spacing.button_padding = vec2(8., 6.);
+
+        s.animation_time = 0.3;
+    });
+}
 
 struct DialogApp<'a> {
   dialogs: Dialogs<'a>,
@@ -191,15 +203,12 @@ impl NameConfirmDialog {
 
 // implement dialog logic
 impl Dialog<String> for NameConfirmDialog {
-  fn show(&mut self, ctx: &Context, _: &DialogUpdateInfo) -> Option<String> {
+  fn show(&mut self, ctx: &Context, dctx: &DialogContext) -> Option<String> {
     // return None if the user hasn't replied
     let mut res = None;
 
     // draw the dialog
-    Window::new("Confirm name")
-      .collapsible(false)
-      .resizable(false)
-      .pivot(Align2::CENTER_CENTER)
+    dialog_window(ctx, dctx, "Confirm name")
       .show(ctx, |ui| {
         ui.label("Your name: ");
         ui.text_edit_singleline(&mut self.name);

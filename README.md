@@ -99,7 +99,7 @@ You can show a customized dialog based on the standard dialogs:
 use egui::include_image;
 use egui_dialogs::{DialogDetails, StandardDialog, StandardReply};
 
-let standard_dialog = StandardDialog::info("Information".into(), "Now you can customize the dialog!".into())
+let standard_dialog = StandardDialog::info("Information", "Now you can customize the dialog!")
     .buttons(vec![
         // use the standard buttons
         StandardReply::Yes.into(),
@@ -133,19 +133,15 @@ Then implement the `Dialog` trait to implement dialog logic
 with a generic type parameter to specify the dialog reply type:
 
 ```rust
-use egui::{Align2, Window};
-use egui_dialogs::{Dialog, DialogUpdateInfo};
+use egui_dialogs::{Dialog, dialog_window, DialogContext};
 
 impl Dialog<String> for NameConfirmDialog {
-  fn show(&mut self, ctx: &egui::Context, _: &DialogUpdateInfo) -> Option<String> {
+  fn show(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<String> {
     // return None if the user hasn't replied
     let mut res = None;
 
     // draw the dialog
-    Window::new("Confirm name")
-      .collapsible(false)
-      .resizable(false)
-      .pivot(Align2::CENTER_CENTER)
+    dialog_window(ctx, dctx, "Confirm name")
       .show(ctx, |ui| {
         ui.label("What's your name: ");
         ui.text_edit_singleline(&mut self.name);
@@ -159,6 +155,9 @@ impl Dialog<String> for NameConfirmDialog {
   }
 }
 ```
+
+The `dialog_window` function is a helper function
+to draw a suggested dialog window with a title and a close button.
 
 Now you can show your customized dialog:
 

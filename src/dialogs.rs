@@ -5,7 +5,7 @@ use egui::{Color32, Id, LayerId, Margin, Rect, Rounding, Sense, Ui, UiStackInfo}
 use crate::*;
 
 /// Information about the current dialog update.
-pub struct DialogUpdateInfo {
+pub struct DialogContext {
     /// The updated dialog id if there is one.
     pub dialog_id: Option<Id>,
 
@@ -28,7 +28,7 @@ pub struct DialogUpdateInfo {
 /// Abstraction over dialog details with different reply types.
 pub trait AbstractDialog {
     /// Paint the current frame and return whether the dialog has been replied.
-    fn update(&mut self, ctx: &egui::Context, update_info: &DialogUpdateInfo) -> bool;
+    fn update(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> bool;
 
     /// Return the mask color if there is one.
     fn mask(&self) -> Option<Color32>;
@@ -37,8 +37,8 @@ pub trait AbstractDialog {
 }
 
 impl<'a, Reply> AbstractDialog for DialogDetails<'a, Reply> {
-    fn update(&mut self, ctx: &egui::Context, update_info: &DialogUpdateInfo) -> bool {
-        match self.dialog.show(ctx, update_info) {
+    fn update(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> bool {
+        match self.dialog.show(ctx, dctx) {
             Some(reply) => {
                 self.handler.take().map(|handler| handler(reply));
                 true
@@ -294,14 +294,14 @@ impl Dialogs<'_> {
         };
         
         if let Some(dialog) = dialog {
-            let update_info = DialogUpdateInfo {
+            let dctx = DialogContext {
                 dialog_id: dialog.id(),
                 animation: self.animation,
                 opacity: how_on,
                 already_closed,
                 mask_rect: ctx.screen_rect() - self.mask_margin,
             };
-            if dialog.update(ctx, &update_info) && !already_closed {
+            if dialog.update(ctx, &dctx) && !already_closed {
                 let closed_dialog = self.dialogs.pop_front();
                 if self.animation.is_some() {
                     self.fading_dialog = closed_dialog;

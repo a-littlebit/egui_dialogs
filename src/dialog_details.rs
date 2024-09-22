@@ -10,8 +10,7 @@ use crate::*;
 /// 
 /// # Example
 /// ```
-/// use egui::{Align2, Window};
-/// use egui_dialogs::{Dialog, DialogUpdateInfo};
+/// use egui_dialogs::{dialog_window, Dialog, DialogContext};
 /// 
 /// // custom dialog for name confirmation
 /// pub struct NameConfirmDialog {
@@ -26,15 +25,12 @@ use crate::*;
 ///
 /// // implement dialog logic
 /// impl Dialog<String> for NameConfirmDialog {
-///   fn show(&mut self, ctx: &egui::Context, _: &DialogUpdateInfo) -> Option<String> {
+///   fn show(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<String> {
 ///     // return None if the user hasn't replied
 ///     let mut res = None;
 ///
 ///     // draw the dialog
-///     Window::new("Confirm name")
-///       .collapsible(false)
-///       .resizable(false)
-///       .pivot(Align2::CENTER_CENTER)
+///     dialog_window(ctx, dctx, "Confirm name")
 ///       .show(ctx, |ui| {
 ///         ui.label("Your name: ");
 ///         ui.text_edit_singleline(&mut self.name);
@@ -49,7 +45,7 @@ use crate::*;
 /// }
 /// ```
 pub trait Dialog<Reply> {
-    fn show(&mut self, ctx: &egui::Context, update_info: &DialogUpdateInfo) -> Option<Reply>;
+    fn show(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<Reply>;
 }
 
 /// Details of a dialog to be shown and replied.

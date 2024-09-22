@@ -1,4 +1,4 @@
-use egui::{include_image, vec2, Align, Align2, Image, ImageSource, Label, Layout, Rect, Sense};
+use egui::{include_image, vec2, Align, Align2, Image, ImageSource, Label, Layout, Rect, Sense, WidgetText};
 use sys_locale::get_locales;
 
 use crate::*;
@@ -111,7 +111,7 @@ impl StandardReply {
 
 impl From<StandardReply> for StandardButton<StandardReply> {
     fn from(reply: StandardReply) -> Self {
-        (reply.localize(), reply)
+        (reply.localize().into(), reply)
     }
 }
 
@@ -122,7 +122,7 @@ impl ToString for StandardReply {
 }
 
 /// A standard dialog button with text and a reply
-pub type StandardButton<Reply> = (String, Reply);
+pub type StandardButton<Reply> = (WidgetText, Reply);
 
 /// A standard dialog.
 /// Use `Dialogs::info`, `Dialogs::warn`, ...
@@ -131,8 +131,8 @@ pub type StandardButton<Reply> = (String, Reply);
 /// Or use `StandardDialog::info`, `StandardDialog::warn`, ...
 /// to create a customizable standard dialog
 pub struct StandardDialog<'i, Reply> {
-    pub title: String,
-    pub content: String,
+    pub title: WidgetText,
+    pub content: WidgetText,
     pub image: Option<ImageSource<'i>>,
     pub buttons: Vec<StandardButton<Reply>>,
 }
@@ -140,22 +140,22 @@ pub struct StandardDialog<'i, Reply> {
 /// Customize a standard dialog
 impl<'i, Reply> StandardDialog<'i, Reply>
 where Reply: Clone {
-    pub fn new(title: String, content: String) -> Self {
+    pub fn new(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
-            title,
-            content,
+            title: title.into(),
+            content: content.into(),
             image: None,
             buttons: vec![],
         }
     }
 
-    pub fn title(mut self, title: String) -> Self {
-        self.title = title;
+    pub fn title(mut self, title: impl Into<WidgetText>) -> Self {
+        self.title = title.into();
         self
     }
 
-    pub fn content(mut self, content: String) -> Self {
-        self.content = content;
+    pub fn content(mut self, content: impl Into<WidgetText>) -> Self {
+        self.content = content.into();
         self
     }
 
@@ -172,46 +172,46 @@ where Reply: Clone {
 
 /// Build a standard dialog
 impl<'i> StandardDialog<'i, StandardReply> {
-    pub fn info(title: String, content: String) -> Self {
+    pub fn info(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
-            title,
-            content,
+            title: title.into(),
+            content: content.into(),
             image: Some(ICON_INFO),
             buttons: vec![StandardReply::Ok.into()],
         }
     }
 
-    pub fn success(title: String, content: String) -> Self {
+    pub fn success(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
-            title,
-            content,
+            title: title.into(),
+            content: content.into(),
             image: Some(ICON_SUCCESS),
             buttons: vec![StandardReply::Ok.into()],
         }
     }
 
-    pub fn confirm(title: String, content: String) -> Self {
+    pub fn confirm(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
-            title,
-            content,
+            title: title.into(),
+            content: content.into(),
             image: Some(ICON_CONFIRM),
             buttons: vec![StandardReply::Yes.into(), StandardReply::No.into()],
         }
     }
 
-    pub fn warning(title: String, content: String) -> Self {
+    pub fn warning(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
-            title,
-            content,
+            title: title.into(),
+            content: content.into(),
             image: Some(ICON_WARNING),
             buttons: vec![StandardReply::Ok.into()],
         }
     }
 
-    pub fn error(title: String, content: String) -> Self {
+    pub fn error(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
-            title,
-            content,
+            title: title.into(),
+            content: content.into(),
             image: Some(ICON_ERROR),
             buttons: vec![StandardReply::Ok.into()],
         }
@@ -220,7 +220,7 @@ impl<'i> StandardDialog<'i, StandardReply> {
 
 impl<'i, Reply> Dialog<Reply> for StandardDialog<'i, Reply>
 where Reply: Clone {
-    fn show(&mut self, ctx: &egui::Context, update_info: &DialogUpdateInfo) -> Option<Reply> {
+    fn show(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<Reply> {
         let Self {
             title,
             content,
@@ -229,21 +229,9 @@ where Reply: Clone {
         } = self;
 
         let mut reply = None;
-        let mut open = !update_info.already_closed;
+        let mut open = true;
 
-        let frame = egui::Frame::window(&ctx.style())
-            .inner_margin(16.);
-
-        egui::Window::new(title.as_str())
-            .collapsible(false)
-            .resizable(false)
-            .pivot(Align2::CENTER_CENTER)
-            .frame(frame)
-            .id(update_info.dialog_id.unwrap_or("StandardDialog".into()))
-            .constrain_to(update_info.mask_rect)
-            .fade_in(update_info.animation.is_some())
-            .fade_out(update_info.animation.is_some())
-            .open(&mut open)
+        closable_dialog_window(ctx, dctx, title.clone(), &mut open)
             .show(ctx, |ui| {
                 ui.spacing_mut().item_spacing = vec2(8., 8.);
                 ui.style_mut().override_font_id = Some(egui::FontId::proportional(15.));
@@ -270,7 +258,7 @@ where Reply: Clone {
                     }
                     
                     ui.add(
-                        Label::new(content.as_str())
+                        Label::new(content.clone())
                             .wrap()
                     );
                 });
@@ -295,7 +283,7 @@ where Reply: Clone {
                 );
 
                 for (text, reply_value) in buttons.iter().rev() {
-                    if button_ui.button(text).clicked() {
+                    if button_ui.button(text.clone()).clicked() {
                         reply = Some(reply_value.clone());
                         break;
                     }
@@ -312,4 +300,40 @@ where Reply: Clone {
             None
         }
     }
+}
+
+/// Create a suggested dialog window
+pub fn dialog_window<'open>(
+    ctx: &egui::Context,
+    dctx: &DialogContext,
+    title: impl Into<WidgetText>
+) -> egui::Window<'open> {
+    let frame = egui::Frame::window(&ctx.style())
+        .inner_margin(16.);
+
+    egui::Window::new(title.into())
+        .collapsible(false)
+        .resizable(false)
+        .pivot(Align2::CENTER_CENTER)
+        .frame(frame)
+        .id(dctx.dialog_id.unwrap_or("StandardDialog".into()))
+        .constrain_to(dctx.mask_rect)
+        .fade_in(dctx.animation.is_some())
+        .fade_out(dctx.animation.is_some())
+        .interactable(!dctx.already_closed)
+}
+
+/// Create a suggested dialog window with a close button
+#[inline]
+pub fn closable_dialog_window<'open>(
+    ctx: &egui::Context,
+    dctx: &DialogContext,
+    title: impl Into<WidgetText>,
+    open: &'open mut bool
+) -> egui::Window<'open> {
+    if dctx.already_closed {
+        *open = false;
+    }
+
+    dialog_window(ctx, dctx, title).open(open)
 }
