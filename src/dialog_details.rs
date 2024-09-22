@@ -1,7 +1,7 @@
 //! Define the `Dialog` trait which can be implemented to customize dialogs
 //! and `DialogDetails` struct which can be used to show dialogs.
 
-use egui::{Color32, Id};
+use egui::{Color32, Id, WidgetText};
 
 use crate::*;
 
@@ -154,37 +154,37 @@ pub type StandardDialogDetails<'a> = DialogDetails<'a, StandardReply>;
 
 impl StandardDialogDetails<'_> {
     #[inline]
-    pub fn info(title: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn info(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
         StandardDialogDetails::new(
-            StandardDialog::info(title.into(), message.into())
+            StandardDialog::info(title, message)
         )
     }
 
     #[inline]
-    pub fn success(title: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn success(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
         StandardDialogDetails::new(
-            StandardDialog::success(title.into(), message.into())
+            StandardDialog::success(title, message)
         )
     }
 
     #[inline]
-    pub fn confirm(title: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn confirm(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
         StandardDialogDetails::new(
-            StandardDialog::confirm(title.into(), message.into())
+            StandardDialog::confirm(title, message)
         )
     }
 
     #[inline]
-    pub fn warning(title: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn warning(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
         StandardDialogDetails::new(
-            StandardDialog::warning(title.into(), message.into())
+            StandardDialog::warning(title, message)
         )
     }
 
     #[inline]
-    pub fn error(title: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn error(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
         StandardDialogDetails::new(
-            StandardDialog::error(title.into(), message.into())
+            StandardDialog::error(title, message)
         )
     }
 }

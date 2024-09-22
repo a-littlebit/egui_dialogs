@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use egui::{Color32, Id, LayerId, Margin, Rect, Rounding, Sense, Ui, UiStackInfo};
+use egui::{Color32, Id, LayerId, Margin, Rect, Rounding, Sense, Ui, UiStackInfo, WidgetText};
 
 use crate::*;
 
@@ -314,13 +314,13 @@ impl Dialogs<'_> {
 impl<'a> Dialogs<'a> {
     #[inline]
     /// Show an information dialog.
-    pub fn info(&mut self, title: impl Into<String>, message: impl Into<String>) {
+    pub fn info(&mut self, title: impl Into<WidgetText>, message: impl Into<WidgetText>) {
         self.add(StandardDialogDetails::info(title, message));
     }
 
     #[inline]
     /// Show a success dialog.
-    pub fn success(&mut self, title: impl Into<String>, message: impl Into<String>) {
+    pub fn success(&mut self, title: impl Into<WidgetText>, message: impl Into<WidgetText>) {
         self.add(StandardDialogDetails::success(title, message));
     }
 
@@ -328,8 +328,8 @@ impl<'a> Dialogs<'a> {
     /// Show a confirmation dialog and handle the reply.
     pub fn confirm(
         &mut self,
-        title: impl Into<String>,
-        message: impl Into<String>,
+        title: impl Into<WidgetText>,
+        message: impl Into<WidgetText>,
         handler: impl FnOnce(StandardReply) + 'a
     ) {
         self.add(
@@ -340,13 +340,13 @@ impl<'a> Dialogs<'a> {
 
     #[inline]
     /// Show a warning dialog.
-    pub fn warning(&mut self, title: impl Into<String>, message: impl Into<String>) {
+    pub fn warning(&mut self, title: impl Into<WidgetText>, message: impl Into<WidgetText>) {
         self.add(StandardDialogDetails::warning(title, message));
     }
 
     #[inline]
     /// Show an error dialog.
-    pub fn error(&mut self, title: impl Into<String>, message: impl Into<String>) {
+    pub fn error(&mut self, title: impl Into<WidgetText>, message: impl Into<WidgetText>) {
         self.add(StandardDialogDetails::error(title, message));
     }
 }
