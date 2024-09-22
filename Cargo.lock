@@ -1017,7 +1017,7 @@ dependencies = [
 
 [[package]]
 name = "egui_dialogs"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "eframe",
  "egui",

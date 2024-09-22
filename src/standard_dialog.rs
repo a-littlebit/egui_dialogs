@@ -1,4 +1,4 @@
-use egui::{include_image, vec2, Align, Align2, Image, ImageSource, Label, Layout, Rect, Sense, WidgetText};
+use egui::{include_image, vec2, Align, Align2, Image, ImageSource, Label, Layout, Sense, WidgetText};
 use sys_locale::get_locales;
 
 use crate::*;
@@ -235,21 +235,8 @@ where Reply: Clone {
             .show(ctx, |ui| {
                 ui.spacing_mut().item_spacing = vec2(8., 8.);
                 ui.style_mut().override_font_id = Some(egui::FontId::proportional(15.));
-
-                let text_rect = {
-                    let mut size = ui.available_size();
-                    size.x -= 40.;
-                    size.y -= 80.;
-                    Rect::from_min_size(ui.next_widget_position(), size)
-                };
                 
-                let mut text_ui = ui.child_ui(
-                    text_rect,
-                    Layout::left_to_right(Align::TOP),
-                    None
-                );
-                
-                text_ui.horizontal(|ui| {
+                ui.horizontal(|ui| {
                     if let Some(image) = image {
                         ui.add(
                             Image::new(image.clone())
@@ -262,8 +249,7 @@ where Reply: Clone {
                             .wrap()
                     );
                 });
-
-                ui.allocate_rect(text_ui.min_rect(), Sense::hover());
+                
                 ui.add_space(8.);
                 
                 ui.spacing_mut().button_padding = vec2(12., 4.);
@@ -271,6 +257,7 @@ where Reply: Clone {
 
                 let button_rect = {
                     let mut rect = ui.min_rect();
+                    rect.min.x = ctx.screen_rect().min.x;
                     rect.min.y = rect.max.y;
                     rect.max.y = ui.available_rect_before_wrap().max.y;
                     rect
@@ -311,16 +298,21 @@ pub fn dialog_window<'open>(
     let frame = egui::Frame::window(&ctx.style())
         .inner_margin(16.);
 
-    egui::Window::new(title.into())
+    let window = egui::Window::new(title.into())
         .collapsible(false)
         .resizable(false)
         .pivot(Align2::CENTER_CENTER)
         .frame(frame)
-        .id(dctx.dialog_id.unwrap_or("StandardDialog".into()))
         .constrain_to(dctx.mask_rect)
         .fade_in(dctx.animation.is_some())
         .fade_out(dctx.animation.is_some())
-        .interactable(!dctx.already_closed)
+        .interactable(!dctx.already_closed);
+
+    if let Some(id) = dctx.dialog_id {
+        window.id(id)
+    } else {
+        window
+    }
 }
 
 /// Create a suggested dialog window with a close button
