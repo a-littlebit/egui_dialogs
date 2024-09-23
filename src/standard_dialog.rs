@@ -1,4 +1,4 @@
-use egui::{include_image, vec2, Align, Align2, Image, ImageSource, Label, Layout, Sense, WidgetText};
+use egui::{include_image, vec2, Align, Align2, Image, ImageSource, Label, Layout, Rect, Sense, WidgetText};
 use sys_locale::get_locales;
 
 use crate::*;
@@ -233,10 +233,23 @@ where Reply: Clone {
 
         closable_dialog_window(ctx, dctx, title.clone(), &mut open)
             .show(ctx, |ui| {
-                ui.spacing_mut().item_spacing = vec2(8., 8.);
-                ui.style_mut().override_font_id = Some(egui::FontId::proportional(15.));
+                let available_rect = dctx.mask_rect - ctx.style().spacing.window_margin;
+                let content_rect = {
+                    let mut size = available_rect.size();
+                    size.x = size.x.min(800.);
+                    Rect::from_min_size(ui.next_widget_position(), size)
+                };
+
+                let mut content_ui = ui.child_ui(
+                    content_rect,
+                    *ui.layout(),
+                    None
+                );
                 
-                ui.horizontal(|ui| {
+                content_ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing = vec2(8., 8.);
+                    ui.style_mut().override_font_id = Some(egui::FontId::proportional(15.));
+
                     if let Some(image) = image {
                         ui.add(
                             Image::new(image.clone())
@@ -249,11 +262,10 @@ where Reply: Clone {
                             .wrap()
                     );
                 });
+
+                ui.allocate_rect(content_ui.min_rect(), Sense::hover());
                 
                 ui.add_space(8.);
-                
-                ui.spacing_mut().button_padding = vec2(12., 4.);
-                ui.style_mut().override_font_id = Some(egui::FontId::monospace(20.));
 
                 let button_rect = {
                     let mut rect = ui.min_rect();
@@ -268,6 +280,9 @@ where Reply: Clone {
                     Layout::right_to_left(Align::TOP),
                     None
                 );
+                
+                button_ui.spacing_mut().button_padding = vec2(12., 4.);
+                button_ui.style_mut().override_font_id = Some(egui::FontId::monospace(20.));
 
                 for (text, reply_value) in buttons.iter().rev() {
                     if button_ui.button(text.clone()).clicked() {
