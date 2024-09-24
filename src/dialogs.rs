@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, sync::Arc};
 
-use egui::{Color32, Id, LayerId, Margin, Rect, Rounding, Sense, Style, Ui, UiStackInfo, WidgetText};
+use egui::{Color32, Id, LayerId, Margin, Order, Rect, Rounding, Sense, Style, Ui, UiStackInfo, WidgetText};
 
 use crate::*;
 
@@ -266,8 +266,19 @@ impl Dialogs<'_> {
         mask_ui.set_opacity(how_on);
 
         mask_ui.painter().rect_filled(mask_rect, self.mask_rounding, color);
-        // sense all interactions to forbid interact with background widgets
-        mask_ui.allocate_rect(mask_rect, Sense::click_and_drag());
+        
+        // cover the layer to forbid interact with background widgets
+        mask_ui.allocate_rect(mask_rect, Sense::hover());
+
+        // forbid focus on the background
+        let focused = ctx.memory(|r| r.focused())
+            .and_then(|id| ctx.read_response(id));
+
+        if let Some(focused) = focused {
+            if focused.layer_id.order == Order::Background {
+                focused.surrender_focus();
+            }
+        }
         
         how_on
     }
