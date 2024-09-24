@@ -45,6 +45,7 @@ use crate::*;
 /// }
 /// ```
 pub trait Dialog<Reply> {
+    /// Customized dialog rendering and response handling process.
     fn show(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<Reply>;
 }
 
@@ -91,6 +92,7 @@ where Reply: 'a {
 
 impl<'a, Reply> DialogDetails<'a, Reply> {
     #[inline]
+    /// Create a `DialogDetails` struct with the specified dialog.
     pub fn new(dialog: impl Dialog<Reply> + 'a) -> Self
     {
         Self::new_dyn(Box::new(dialog))
@@ -106,6 +108,7 @@ impl<'a, Reply> DialogDetails<'a, Reply> {
     }
 
     #[inline]
+    /// Set a handler to be called when the dialog is replied.
     pub fn on_reply(self, handler: impl FnOnce(Reply) + 'a) -> Self {
         self.on_reply_dyn(Box::new(handler))
     }
@@ -144,6 +147,7 @@ impl<'a, Reply> DialogDetails<'a, Reply> {
         self.id
     }
 
+    /// Show the dialog.
     pub fn show(self, dialogs: &mut Dialogs<'a>) {
         dialogs.add(self);
     }
@@ -154,6 +158,7 @@ pub type StandardDialogDetails<'a> = DialogDetails<'a, StandardReply>;
 
 impl StandardDialogDetails<'_> {
     #[inline]
+    /// Create a `DialogDetails` struct with an info dialog.
     pub fn info(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
         StandardDialogDetails::new(
             StandardDialog::info(title, message)
@@ -161,6 +166,7 @@ impl StandardDialogDetails<'_> {
     }
 
     #[inline]
+    /// Create a `DialogDetails` struct with a success dialog.
     pub fn success(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
         StandardDialogDetails::new(
             StandardDialog::success(title, message)
@@ -168,6 +174,7 @@ impl StandardDialogDetails<'_> {
     }
 
     #[inline]
+    /// Create a `DialogDetails` struct with a confirm dialog.
     pub fn confirm(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
         StandardDialogDetails::new(
             StandardDialog::confirm(title, message)
@@ -175,6 +182,7 @@ impl StandardDialogDetails<'_> {
     }
 
     #[inline]
+    /// Create a `DialogDetails` struct with a warning dialog.
     pub fn warning(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
         StandardDialogDetails::new(
             StandardDialog::warning(title, message)
@@ -182,6 +190,7 @@ impl StandardDialogDetails<'_> {
     }
 
     #[inline]
+    /// Create a `DialogDetails` struct with an error dialog.
     pub fn error(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
         StandardDialogDetails::new(
             StandardDialog::error(title, message)

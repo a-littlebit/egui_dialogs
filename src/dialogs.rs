@@ -1,6 +1,6 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, sync::Arc};
 
-use egui::{Color32, Id, LayerId, Margin, Rect, Rounding, Sense, Ui, UiStackInfo, WidgetText};
+use egui::{Color32, Id, LayerId, Margin, Rect, Rounding, Sense, Style, Ui, UiStackInfo, WidgetText};
 
 use crate::*;
 
@@ -98,6 +98,9 @@ pub struct Dialogs<'a> {
     pub animation: Option<fn(f32) -> f32>,
     
     fading_dialog: Option<Box<dyn AbstractDialog + 'a>>,
+
+    /// Override the style of the dialogs.
+    pub style: Option<Arc<Style>>,
 }
 
 impl Dialogs<'_> {
@@ -109,21 +112,25 @@ impl Dialogs<'_> {
             mask_rounding: Rounding::ZERO,
             animation: Some(egui::emath::easing::cubic_out),
             fading_dialog: None,
+            style: None,
         }
     }
 
     #[inline]
+    /// Set the margin of the background mask.
     pub fn mask_margin(mut self, margin: impl Into<Margin>) -> Self {
         self.mask_margin = margin.into();
         self
     }
 
     #[inline]
+    /// Set the rounding of the background mask.
     pub fn mask_rounding(mut self, rounding: impl Into<Rounding>) -> Self {
         self.mask_rounding = rounding.into();
         self
     }
 
+    /// Set the animation function. Use None to disable animation.
     pub fn animate(mut self, animation: Option<fn(f32) -> f32>) -> Self {
         self.animation = animation;
         if animation.is_none() && self.fading_dialog.is_some() {
@@ -132,6 +139,7 @@ impl Dialogs<'_> {
         self
     }
 
+    /// Set whether the dialogs are animated.
     pub fn animated(mut self, is_animated: bool) -> Self {
         if is_animated {
             if self.animation.is_none() {
@@ -141,6 +149,13 @@ impl Dialogs<'_> {
             self.animation = None;
             self.fading_dialog = None;
         }
+        self
+    }
+
+    #[inline]
+    /// Override the style of the dialogs.
+    pub fn style(mut self, style: impl Into<Arc<Style>>) -> Self {
+        self.style = Some(style.into());
         self
     }
 }
@@ -258,7 +273,8 @@ impl Dialogs<'_> {
     }
 
     /// Show the currently open dialog if there is one.
-    pub fn show(&mut self, ctx: &egui::Context) {
+    /// Returns whether any dialog was shown.
+    pub fn show(&mut self, ctx: &egui::Context) -> bool {
         let on = !self.dialogs.is_empty() && self.fading_dialog.is_none();
         let how_on = if on || self.fading_dialog.is_some() {
             let mask_color = match &self.fading_dialog {
@@ -285,7 +301,7 @@ impl Dialogs<'_> {
                 self.fading_dialog = None;
                 ctx.request_repaint();
             }
-            return;
+            return false;
         }
 
         let (dialog, already_closed) = match self.fading_dialog {
@@ -294,6 +310,14 @@ impl Dialogs<'_> {
         };
         
         if let Some(dialog) = dialog {
+            let outer_style = if let Some(ref style) = self.style {
+                let outer_style = ctx.style();
+                ctx.set_style(Arc::clone(style));
+                Some(outer_style)
+            } else {
+                None
+            };
+            
             let dctx = DialogContext {
                 dialog_id: dialog.id(),
                 animation: self.animation,
@@ -307,6 +331,14 @@ impl Dialogs<'_> {
                     self.fading_dialog = closed_dialog;
                 }
             }
+
+            if let Some(outer_style) = outer_style {
+                ctx.set_style(outer_style);
+            }
+
+            true
+        } else {
+            false
         }
     }
 }

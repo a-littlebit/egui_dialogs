@@ -148,22 +148,26 @@ where Reply: Clone {
             buttons: vec![],
         }
     }
-
+    
+    /// Set the dialog title
     pub fn title(mut self, title: impl Into<WidgetText>) -> Self {
         self.title = title.into();
         self
     }
 
+    /// Set the dialog content
     pub fn content(mut self, content: impl Into<WidgetText>) -> Self {
         self.content = content.into();
         self
     }
 
+    /// Set the dialog image
     pub fn image(mut self, image: ImageSource<'i>) -> Self {
         self.image = Some(image);
         self
     }
 
+    /// Set the dialog buttons
     pub fn buttons(mut self, buttons: Vec<StandardButton<Reply>>) -> Self {
         self.buttons = buttons;
         self
@@ -172,6 +176,7 @@ where Reply: Clone {
 
 /// Build a standard dialog
 impl<'i> StandardDialog<'i, StandardReply> {
+    /// Create an info dialog
     pub fn info(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
             title: title.into(),
@@ -181,6 +186,7 @@ impl<'i> StandardDialog<'i, StandardReply> {
         }
     }
 
+    /// Create a success dialog
     pub fn success(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
             title: title.into(),
@@ -190,6 +196,7 @@ impl<'i> StandardDialog<'i, StandardReply> {
         }
     }
 
+    /// Create a confirmation dialog
     pub fn confirm(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
             title: title.into(),
@@ -199,6 +206,7 @@ impl<'i> StandardDialog<'i, StandardReply> {
         }
     }
 
+    /// Create a warning dialog
     pub fn warning(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
             title: title.into(),
@@ -208,6 +216,7 @@ impl<'i> StandardDialog<'i, StandardReply> {
         }
     }
 
+    /// Create an error dialog
     pub fn error(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
             title: title.into(),
