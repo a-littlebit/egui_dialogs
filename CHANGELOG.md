@@ -2,6 +2,12 @@
 
 All notable changes to this crate will be documented in this file.
 
+## 0.2.6 - 2024-09-28
+
+### Updated
+
+- Updated egui to 0.29.0
+
 ## 0.2.5 - 2024-09-25
 
 ### Fixed

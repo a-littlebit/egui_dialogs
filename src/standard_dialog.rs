@@ -1,4 +1,4 @@
-use egui::{include_image, vec2, Align, Align2, Image, ImageSource, Label, Layout, Rect, Sense, WidgetText};
+use egui::{include_image, vec2, Align, Align2, Image, ImageSource, Label, Layout, Rect, Sense, UiBuilder, WidgetText};
 use sys_locale::get_locales;
 
 use crate::*;
@@ -249,10 +249,8 @@ where Reply: Clone {
                     Rect::from_min_size(ui.next_widget_position(), size)
                 };
 
-                let mut content_ui = ui.child_ui(
-                    content_rect,
-                    *ui.layout(),
-                    None
+                let mut content_ui = ui.new_child(
+                    UiBuilder::new().max_rect(content_rect)
                 );
                 
                 content_ui.horizontal(|ui| {
@@ -284,10 +282,10 @@ where Reply: Clone {
                     rect
                 };
 
-                let mut button_ui = ui.child_ui(
-                    button_rect,
-                    Layout::right_to_left(Align::TOP),
-                    None
+                let mut button_ui = ui.new_child(
+                    UiBuilder::new()
+                        .max_rect(button_rect)
+                        .layout(Layout::right_to_left(Align::TOP))
                 );
                 
                 button_ui.spacing_mut().button_padding = vec2(12., 4.);

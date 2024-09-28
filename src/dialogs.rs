@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, sync::Arc};
 
-use egui::{Color32, Id, LayerId, Margin, Order, Rect, Rounding, Sense, Style, Ui, UiStackInfo, WidgetText};
+use egui::{Color32, Id, LayerId, Margin, Order, Rect, Rounding, Sense, Style, Ui, UiBuilder, WidgetText};
 
 use crate::*;
 
@@ -258,9 +258,7 @@ impl Dialogs<'_> {
             ctx.clone(),
             layer_id,
             id,
-            mask_rect,
-            mask_rect,
-            UiStackInfo::default(), // set by show_inside_dyn
+            UiBuilder::new().max_rect(mask_rect)
         );
 
         mask_ui.set_opacity(how_on);
