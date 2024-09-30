@@ -2,6 +2,16 @@
 
 All notable changes to this crate will be documented in this file.
 
+## 0.3.0 - 2024-09-30
+
+### New Features
+
+- Allow handling dialog replies without callbacks - use IDs to identify your dialogs and handle replies!
+
+### Added
+
+- Added: `Dialogs::is_open`, `Dialogs::add_if_absent`, `DialogDetails::show_if_absent` to show a dialog only if it's not already open
+
 ## 0.2.6 - 2024-09-28
 
 ### Updated

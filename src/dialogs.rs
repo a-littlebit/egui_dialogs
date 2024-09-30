@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, sync::Arc};
+use std::{any::Any, collections::VecDeque, sync::Arc};
 
 use egui::{Color32, Id, LayerId, Margin, Order, Rect, Rounding, Sense, Style, Ui, UiBuilder, WidgetText};
 
@@ -25,26 +25,101 @@ pub struct DialogContext {
     pub mask_rect: Rect,
 }
 
+/// The response of a dialog.
+pub struct DialogResponse {
+    /// The dialog's id if there is one.
+    pub id: Option<Id>,
+
+    /// The reply of the dialog.
+    /// If the dialog hasn't been replied yet
+    /// or a reply handler is set, this field will bo `None`.
+    pub reply: Option<Box<dyn Any>>,
+}
+
+impl DialogResponse {
+    #[inline]
+    /// Check if the response is from the specified dialog.
+    pub fn is(&self, id: impl Into<Id>) -> bool {
+        self.id == Some(id.into())
+    }
+
+    #[inline]
+    /// Check if the response contains a reply.
+    pub fn is_reply(&self) -> bool {
+        self.reply.is_some()
+    }
+
+    #[inline]
+    /// Check if the response contains a reply from the specified dialog.
+    pub fn is_reply_of(&self, id: impl Into<Id>) -> bool {
+        self.id == Some(id.into()) && self.reply.is_some()
+    }
+
+    #[inline]
+    /// Attempt to get the reply of the dialog.
+    /// Returns Err if the reply is not of the specified type
+    /// or the the response contains no reply.
+    pub fn reply<Reply: Any>(self) -> Result<Reply, Self> {
+        match self.reply {
+            Some(reply) => {
+                reply
+                    .downcast()
+                    .map(|r| *r)
+                    .map_err(|r| {
+                        DialogResponse {
+                            id: self.id,
+                            reply: Some(r)
+                        }
+                    })
+            },
+            None => Err(self),
+        }
+    }
+    
+    #[inline]
+    /// Attempt to get the reply of the dialog as a reference.
+    /// See [`Self::reply`].
+    pub fn reply_ref<Reply: Any>(&self) -> Option<&Reply> {
+        self.reply.as_ref().and_then(|r| r.downcast_ref())
+    }
+
+    #[inline]
+    /// Attempt to get the reply of the dialog as a mutable reference.
+    /// See [`Self::reply`].
+    pub fn reply_mut<Reply: Any>(&mut self) -> Option<&mut Reply> {
+        self.reply.as_mut().and_then(|r| r.downcast_mut())
+    }
+}
+
 /// Abstraction over dialog details with different reply types.
 pub trait AbstractDialog {
     /// Paint the current frame and return whether the dialog has been replied.
-    fn update(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> bool;
+    fn update(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<DialogResponse>;
 
     /// Return the mask color if there is one.
     fn mask(&self) -> Option<Color32>;
 
+    /// Return the dialog's id if there is one.
     fn id(&self) -> Option<Id>;
 }
 
-impl<'a, Reply> AbstractDialog for DialogDetails<'a, Reply> {
-    fn update(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> bool {
-        match self.dialog.show(ctx, dctx) {
-            Some(reply) => {
-                self.handler.take().map(|handler| handler(reply));
-                true
-            },
-            None => false
-        }
+impl<'a, R> AbstractDialog for DialogDetails<'a, R>
+where R: Any {
+    fn update(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<DialogResponse> {
+        self.dialog.show(ctx, dctx).map(|reply| {
+            if let Some(handler) = self.handler.take() {
+                (handler)(reply);
+                DialogResponse {
+                    id: self.id,
+                    reply: None,
+                }
+            } else {
+                DialogResponse {
+                    id: self.id,
+                    reply: Some(Box::new(reply)),
+                }
+            }
+        })
     }
 
     fn mask(&self) -> Option<Color32> {
@@ -170,21 +245,36 @@ impl<'a> Dialogs<'a> {
     /// Show a dialog.
     /// If a dialog is already open, the new dialog will be added to the back of the queue.
     #[inline]
-    pub fn add<Reply: 'a>(&mut self, dialog: DialogDetails<'a, Reply>) {
+    pub fn add<Reply: 'a + Any>(&mut self, dialog: DialogDetails<'a, Reply>) {
         self.dialogs.push_back(Box::new(dialog));
     }
 
     /// Show a dialog immediately.
     /// This means it will cut into the front of the current dialog queue.
     #[inline]
-    pub fn add_immediate<Reply: 'a>(&mut self, dialog: DialogDetails<'a, Reply>) {
+    pub fn add_immediate<Reply: 'a + Any>(&mut self, dialog: DialogDetails<'a, Reply>) {
         self.dialogs.push_front(Box::new(dialog));
+    }
+
+    #[inline]
+    /// Show a dialog if it is not already open.
+    pub fn add_if_absent<Reply: 'a + Any>(&mut self, dialog: DialogDetails<'a, Reply>) {
+        if dialog.id.map_or(true, |id| !self.is_open(id)) {
+            self.add(dialog);
+        }
     }
 
     /// Get the currently open dialog.
     #[inline]
     pub fn current_dialog(&self) -> Option<&Box<dyn AbstractDialog + 'a>> {
         self.dialogs.front()
+    }
+
+    #[inline]
+    /// Check if a dialog is open.
+    pub fn is_open(&self, id: impl Into<Id>) -> bool {
+        let id = id.into();
+        self.dialogs.iter().any(|dialog| dialog.id() == Some(id))
     }
 
     /// Pop the current dialog.
@@ -282,8 +372,10 @@ impl Dialogs<'_> {
     }
 
     /// Show the currently open dialog if there is one.
-    /// Returns whether any dialog was shown.
-    pub fn show(&mut self, ctx: &egui::Context) -> bool {
+    /// Returns None if there is no dialog to show.
+    /// Returns Some(DialogResponse) with no reply if a dialog is open.
+    /// Returns Some(DialogResponse) with reply if a dialog without reply handler is closed.
+    pub fn show(&mut self, ctx: &egui::Context) -> Option<DialogResponse> {
         let on = !self.dialogs.is_empty() && self.fading_dialog.is_none();
         let how_on = if on || self.fading_dialog.is_some() {
             let mask_color = match &self.fading_dialog {
@@ -310,7 +402,7 @@ impl Dialogs<'_> {
                 self.fading_dialog = None;
                 ctx.request_repaint();
             }
-            return false;
+            return None;
         }
 
         let (dialog, already_closed) = match self.fading_dialog {
@@ -319,6 +411,13 @@ impl Dialogs<'_> {
         };
         
         if let Some(dialog) = dialog {
+            let id = dialog.id();
+            
+            let mut res = DialogResponse {
+                id,
+                reply: None
+            };
+            
             let outer_style = if let Some(ref style) = self.style {
                 let outer_style = ctx.style();
                 ctx.set_style(Arc::clone(style));
@@ -327,17 +426,20 @@ impl Dialogs<'_> {
                 None
             };
             
-            let dctx = DialogContext {
-                dialog_id: dialog.id(),
+            let dctx = &DialogContext {
+                dialog_id: id,
                 animation: self.animation,
                 opacity: how_on,
                 already_closed,
                 mask_rect: ctx.screen_rect() - self.mask_margin,
             };
-            if dialog.update(ctx, &dctx) && !already_closed {
-                let closed_dialog = self.dialogs.pop_front();
-                if self.animation.is_some() {
-                    self.fading_dialog = closed_dialog;
+            if !already_closed {
+                if let Some(response) = dialog.update(ctx, dctx) {
+                    res = response;
+                    let closed_dialog = self.dialogs.pop_front();
+                    if self.animation.is_some() {
+                        self.fading_dialog = closed_dialog;
+                    }
                 }
             }
 
@@ -345,9 +447,9 @@ impl Dialogs<'_> {
                 ctx.set_style(outer_style);
             }
 
-            true
+            Some(res)
         } else {
-            false
+            None
         }
     }
 }

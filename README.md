@@ -54,6 +54,8 @@ self.dialogs.info("Information", "This is an info dialog");
 
 ### Handle reply
 
+#### Using callback functions
+
 Use `DialogDetails` struct to build
 a dialog with custom attributes.
 
@@ -85,6 +87,49 @@ if ctx.input(|i| i.viewport().close_requested()) {
                 }
             })
             .show(&mut self.dialogs);
+    }
+}
+```
+
+#### Using IDs
+
+As rust compiler thinks that your dialog callbacks may be called at any time, it limits your callback from visiting your app states.
+
+To avoid filling your app state struct with `Rc` and `RefCell`, you can specify an ID for your dialog and use it to identify the dialog reply when a dialog is closed:
+
+```rust
+use egui::Id;
+use egui_dialogs::{DialogDetails, StandardReply};
+
+// in your app state
+pub allow_to_close: bool,
+// and initialize it with false
+
+// define an ID for your dialog
+const CLOSE_CONFIRM_DIALOG_ID: &str = "close_confirm_dialog";
+
+// in your update function
+if let Some(res) = self.dialogs.show(ctx) {
+    // handle reply from close confirmation dialog
+    if res.is_reply_of(CLOSE_CONFIRM_DIALOG_ID) {
+        match res.reply() {
+            Ok(StandardReply::Yes) => {
+                self.allow_to_close = true;
+                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            },
+            _ => {},
+        }
+    }
+}
+
+// when you want to show the dialog
+if ctx.input(|i| i.viewport().close_requested()) {
+    if !self.allow_to_close {
+        ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+        DialogDetails::confirm("Close", "Are you sure you want to close the window?")
+            // specify the dialog ID
+            .with_id(CLOSE_CONFIRM_DIALOG_ID)
+            .show_if_absent(&mut self.dialogs);
     }
 }
 ```

@@ -1,6 +1,8 @@
 //! Define the `Dialog` trait which can be implemented to customize dialogs
 //! and `DialogDetails` struct which can be used to show dialogs.
 
+use std::any::Any;
+
 use egui::{Color32, Id, WidgetText};
 
 use crate::*;
@@ -83,14 +85,15 @@ pub trait Dialog<Reply> {
 /// # }
 /// ```
 pub struct DialogDetails<'a, Reply>
-where Reply: 'a {
+where Reply: 'a + Any {
     pub(crate) dialog: Box<dyn Dialog<Reply> + 'a>,
     pub(crate) handler: Option<Box<dyn FnOnce(Reply) + 'a>>,
     pub(crate) mask: Option<Color32>,
     pub(crate) id: Option<Id>,
 }
 
-impl<'a, Reply> DialogDetails<'a, Reply> {
+impl<'a, Reply> DialogDetails<'a, Reply>
+where Reply: 'a + Any {
     #[inline]
     /// Create a `DialogDetails` struct with the specified dialog.
     pub fn new(dialog: impl Dialog<Reply> + 'a) -> Self
@@ -136,8 +139,8 @@ impl<'a, Reply> DialogDetails<'a, Reply> {
     #[inline]
     /// Set the id of the dialog. Used for identify different dialogs
     /// with a AbstractDialog trait object.
-    pub fn with_id(mut self, id: Id) -> Self {
-        self.id = Some(id);
+    pub fn with_id(mut self, id: impl Into<Id>) -> Self {
+        self.id = Some(id.into());
         self
     }
 
@@ -147,9 +150,16 @@ impl<'a, Reply> DialogDetails<'a, Reply> {
         self.id
     }
 
+    #[inline]
     /// Show the dialog.
     pub fn show(self, dialogs: &mut Dialogs<'a>) {
         dialogs.add(self);
+    }
+
+    #[inline]
+    /// Show thre dialog if it is not already open.
+    pub fn show_if_absent(self, dialogs: &mut Dialogs<'a>) {
+        dialogs.add_if_absent(self);
     }
 }
 
