@@ -173,7 +173,7 @@ impl eframe::App for DialogApp<'_> {
             });
 
             ui.horizontal(|ui| {
-                // Show standard confirm dialog with custom reply handler
+                // Show standard confirm dialog with id
                 if ui.button("Show confirm dialog").clicked() {
                     DialogDetails::confirm(
                         "Confirm name", 
@@ -183,7 +183,7 @@ impl eframe::App for DialogApp<'_> {
                     .show(&mut self.dialogs);
                 }
 
-                // Show custom dialog with custom handler
+                // Show custom dialog with id
                 if ui.button("Custom dialog").clicked() {
                     DialogDetails::new(NameConfirmDialog::new(self.confirmed_name.clone()))
                         .with_id(NAME_INPUT_CONFIRM_DIALOG_ID)

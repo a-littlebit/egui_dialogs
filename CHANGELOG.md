@@ -2,6 +2,16 @@
 
 All notable changes to this crate will be documented in this file.
 
+## 0.3.1 - 2024-09-30
+
+### Changed
+
+- `DialogDetails::on_reply` now returns a new `DialogDetails` with a reply type mapped by the reply handler
+
+### Fixed
+
+- Fix: Dialog coundn't show fade-out animation after closed
+
 ## 0.3.0 - 2024-09-30
 
 ### New Features

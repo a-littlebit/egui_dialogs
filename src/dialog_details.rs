@@ -87,7 +87,6 @@ pub trait Dialog<Reply> {
 pub struct DialogDetails<'a, Reply>
 where Reply: 'a + Any {
     pub(crate) dialog: Box<dyn Dialog<Reply> + 'a>,
-    pub(crate) handler: Option<Box<dyn FnOnce(Reply) + 'a>>,
     pub(crate) mask: Option<Color32>,
     pub(crate) id: Option<Id>,
 }
@@ -104,22 +103,42 @@ where Reply: 'a + Any {
     pub fn new_dyn(dialog: Box<dyn Dialog<Reply> + 'a>) -> Self {
         Self {
             dialog,
-            handler: None,
             mask: Some(Color32::from_black_alpha(0x80)),
             id: None,
         }
     }
 
     #[inline]
-    /// Set a handler to be called when the dialog is replied.
-    pub fn on_reply(self, handler: impl FnOnce(Reply) + 'a) -> Self {
+    /// Return a new `DialogDetails` struct with the specified reply handler
+    /// and a reply type mapped by the handler.
+    pub fn on_reply<R: Any>(self, handler: impl FnOnce(Reply) -> R + 'a) -> DialogDetails<'a, R> {
         self.on_reply_dyn(Box::new(handler))
     }
 
     #[inline]
-    pub fn on_reply_dyn(mut self, handler: Box<dyn FnOnce(Reply) + 'a>) -> Self {
-        self.handler = Some(handler);
-        self
+    /// dynamic version of [`Self::on_reply`]
+    pub fn on_reply_dyn<R: Any>(self, handler: Box<dyn FnOnce(Reply) -> R + 'a>) -> DialogDetails<'a, R> {
+        struct MappedDialog<'m, From, To> {
+            dialog: Box<dyn Dialog<From> + 'm>,
+            mapper: Option<Box<dyn FnOnce(From) -> To + 'm>>,
+        }
+
+        impl<'m, From, To> Dialog<To> for MappedDialog<'m, From, To> {
+            fn show(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<To> {
+                self.dialog.show(ctx, dctx).and_then(|from| {
+                    self.mapper.take().map(|mapper| (mapper)(from))
+                })
+            }
+        }
+
+        DialogDetails {
+            dialog: Box::new(MappedDialog {
+                dialog: self.dialog,
+                mapper: Some(handler),
+            }),
+            mask: self.mask,
+            id: self.id,
+        }
     }
 
     #[inline]

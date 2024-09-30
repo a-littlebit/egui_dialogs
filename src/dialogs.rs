@@ -31,8 +31,7 @@ pub struct DialogResponse {
     pub id: Option<Id>,
 
     /// The reply of the dialog.
-    /// If the dialog hasn't been replied yet
-    /// or a reply handler is set, this field will bo `None`.
+    /// If the dialog hasn't been replied yet, this field will bo `None`.
     pub reply: Option<Box<dyn Any>>,
 }
 
@@ -94,7 +93,7 @@ impl DialogResponse {
 /// Abstraction over dialog details with different reply types.
 pub trait AbstractDialog {
     /// Paint the current frame and return whether the dialog has been replied.
-    fn update(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<DialogResponse>;
+    fn update(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<Box<dyn Any>>;
 
     /// Return the mask color if there is one.
     fn mask(&self) -> Option<Color32>;
@@ -105,21 +104,8 @@ pub trait AbstractDialog {
 
 impl<'a, R> AbstractDialog for DialogDetails<'a, R>
 where R: Any {
-    fn update(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<DialogResponse> {
-        self.dialog.show(ctx, dctx).map(|reply| {
-            if let Some(handler) = self.handler.take() {
-                (handler)(reply);
-                DialogResponse {
-                    id: self.id,
-                    reply: None,
-                }
-            } else {
-                DialogResponse {
-                    id: self.id,
-                    reply: Some(Box::new(reply)),
-                }
-            }
-        })
+    fn update(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<Box<dyn Any>> {
+        self.dialog.show(ctx, dctx).map(|r| Box::new(r) as Box::<dyn Any>)
     }
 
     fn mask(&self) -> Option<Color32> {
@@ -374,37 +360,50 @@ impl Dialogs<'_> {
     /// Show the currently open dialog if there is one.
     /// Returns None if there is no dialog to show.
     /// Returns Some(DialogResponse) with no reply if a dialog is open.
-    /// Returns Some(DialogResponse) with reply if a dialog without reply handler is closed.
+    /// Returns Some(DialogResponse) with reply if a dialog is closed.
     pub fn show(&mut self, ctx: &egui::Context) -> Option<DialogResponse> {
+        // is a dialog open?
         let on = !self.dialogs.is_empty() && self.fading_dialog.is_none();
+        // how opaque is the mask?
         let how_on = if on || self.fading_dialog.is_some() {
+            // get the mask color from the dialog which to be shown
             let mask_color = match &self.fading_dialog {
                 Some(fading_dialog) => fading_dialog.mask(),
                 None => self.dialogs.front().unwrap().mask(), // self.dialogs mustn't be empty here
             };
             if let Some(mask_color) = mask_color {
+                // paint mask
                 self.show_mask(ctx, mask_color, on)
             } else if let Some(animation) = self.animation {
+                // no mask to paint, but we give time for dialog to animate
                 ctx.animate_bool_with_easing(
                     Id::new((ctx.viewport_id(), Self::ID_NAME)),
                     on,
                     animation
                 )
             } else {
+                // a dialog without animation is still visible
                 1.
             }
         } else {
+            // nothing to show
             0.
         };
 
+        // nothing to show anymore
         if how_on == 0. {
             if self.fading_dialog.is_some() {
+                // the dialog has just faded out
                 self.fading_dialog = None;
-                ctx.request_repaint();
+                // we need a repaint to show the next dialog if there is one
+                if !self.dialogs.is_empty() {
+                    ctx.request_repaint();
+                }
             }
             return None;
         }
 
+        // the dialog to show and whether it was already closed
         let (dialog, already_closed) = match self.fading_dialog {
             Some(ref mut fading_dialog) => (Some(fading_dialog), true),
             None => (self.dialogs.front_mut(), false),
@@ -413,7 +412,7 @@ impl Dialogs<'_> {
         if let Some(dialog) = dialog {
             let id = dialog.id();
             
-            let mut res = DialogResponse {
+            let mut response = DialogResponse {
                 id,
                 reply: None
             };
@@ -433,9 +432,10 @@ impl Dialogs<'_> {
                 already_closed,
                 mask_rect: ctx.screen_rect() - self.mask_margin,
             };
-            if !already_closed {
-                if let Some(response) = dialog.update(ctx, dctx) {
-                    res = response;
+            if let Some(reply) = dialog.update(ctx, dctx) {
+                // if the dialog is already closed, we ignore the reply
+                if !already_closed {
+                    response.reply = Some(reply);
                     let closed_dialog = self.dialogs.pop_front();
                     if self.animation.is_some() {
                         self.fading_dialog = closed_dialog;
@@ -447,7 +447,7 @@ impl Dialogs<'_> {
                 ctx.set_style(outer_style);
             }
 
-            Some(res)
+            Some(response)
         } else {
             None
         }
