@@ -2,6 +2,12 @@
 
 All notable changes to this crate will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- `Dialogs::confirm` now takes an ID instead of a callback function
+
 ## 0.3.1 - 2024-09-30
 
 ### Changed

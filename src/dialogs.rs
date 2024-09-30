@@ -473,11 +473,11 @@ impl<'a> Dialogs<'a> {
         &mut self,
         title: impl Into<WidgetText>,
         message: impl Into<WidgetText>,
-        handler: impl FnOnce(StandardReply) + 'a
+        id: impl Into<Id>
     ) {
         self.add(
             StandardDialogDetails::confirm(title, message)
-                .on_reply(handler)
+                .with_id(id)
         );
     }
 
