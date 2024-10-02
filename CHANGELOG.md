@@ -2,7 +2,11 @@
 
 All notable changes to this crate will be documented in this file.
 
-## Unreleased
+## 0.3.2 - 2024-10-02
+
+### Added
+
+- Added helper functions to easily map `StandardReply` to other reply types
 
 ### Changed
 

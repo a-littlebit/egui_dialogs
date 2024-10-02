@@ -99,12 +99,28 @@ pub enum StandardReply {
 }
 
 impl StandardReply {
-    pub fn localize(&self) -> String {
-        match *self {
+    pub fn localize(self) -> String {
+        match self {
             StandardReply::Ok =>     translate_standard_reply(STANDARD_OK_REPLY),
             StandardReply::Cancel => translate_standard_reply(STANDARD_CANCEL_REPLY),
             StandardReply::Yes =>    translate_standard_reply(STANDARD_YES_REPLY),
             StandardReply::No =>     translate_standard_reply(STANDARD_NO_REPLY),
+        }
+    }
+
+    #[inline]
+    pub fn accepted(self) -> bool {
+        match self {
+            StandardReply::Ok | StandardReply::Yes => true,
+            _ => false,
+        }
+    }
+
+    #[inline]
+    pub fn rejected(self) -> bool {
+        match self {
+            StandardReply::Cancel | StandardReply::No => true,
+            _ => false,
         }
     }
 }

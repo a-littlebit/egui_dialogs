@@ -226,3 +226,63 @@ impl StandardDialogDetails<'_> {
         )
     }
 }
+
+impl<'a> StandardDialogDetails<'a> {
+    #[inline]
+    /// Invoke handler when the dialog is accepted.
+    pub fn on_accepted(self, handler: impl FnOnce() + 'a) -> Self {
+        self.on_reply(|reply| {
+            if reply.accepted() {
+                (handler)();
+            }
+            reply
+        })
+    }
+
+    #[inline]
+    /// Invoke handler when the dialog is rejected.
+    pub fn on_rejected(self, handler: impl FnOnce() + 'a) -> Self {
+        self.on_reply(|reply| {
+            if reply.rejected() {
+                (handler)();
+            }
+            reply
+        })
+    }
+    
+    #[inline]
+    /// Map to a DialogDetails with a new reply type using the handler
+    /// which receives a boolean indicating whether the dialog was accepted.
+    pub fn on_accepted_or<R: Any>(self, handler: impl FnOnce(bool) -> R + 'a) -> DialogDetails<'a, R> {
+        self.on_reply(|reply| {
+            (handler)(reply.accepted())
+        })
+    }
+
+    #[inline]
+    /// Map to a DialogDetails with boolean reply type
+    /// indicating whether the dialog was accepted.
+    pub fn map_accepted(self) -> DialogDetails<'a, bool> {
+        self.on_reply(StandardReply::accepted)
+    }
+
+    #[inline]
+    /// Map to a DialogDetails with boolean reply type
+    /// indicating whether the dialog was rejected.
+    pub fn map_rejected(self) -> DialogDetails<'a, bool> {
+        self.on_reply(StandardReply::rejected)
+    }
+
+    #[inline]
+    /// Map to a DialogDetails with a new reply type
+    /// by specifying the accepted and rejected replies.
+    pub fn map_accepted_or<R: Any>(self, accepted: R, rejected: R) -> DialogDetails<'a, R> {
+        self.on_reply(|reply| {
+            if reply.accepted() {
+                accepted
+            } else {
+                rejected
+            }
+        })
+    }
+}
