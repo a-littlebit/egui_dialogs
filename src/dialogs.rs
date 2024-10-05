@@ -469,15 +469,14 @@ impl<'a> Dialogs<'a> {
 
     #[inline]
     /// Show a confirmation dialog and handle the reply.
-    pub fn confirm(
+    pub fn confirm<R: Any>(
         &mut self,
         title: impl Into<WidgetText>,
         message: impl Into<WidgetText>,
-        id: impl Into<Id>
+        config: impl FnOnce(StandardDialogDetails) -> DialogDetails<R>
     ) {
         self.add(
-            StandardDialogDetails::confirm(title, message)
-                .with_id(id)
+            config(StandardDialogDetails::confirm(title, message))
         );
     }
 

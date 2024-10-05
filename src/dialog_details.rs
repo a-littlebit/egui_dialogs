@@ -253,30 +253,39 @@ impl<'a> StandardDialogDetails<'a> {
     #[inline]
     /// Map to a DialogDetails with a new reply type using the handler
     /// which receives a boolean indicating whether the dialog was accepted.
-    pub fn on_accepted_or<R: Any>(self, handler: impl FnOnce(bool) -> R + 'a) -> DialogDetails<'a, R> {
+    pub fn map_accepted<R: Any>(self, handler: impl FnOnce(bool) -> R + 'a) -> DialogDetails<'a, R> {
         self.on_reply(|reply| {
             (handler)(reply.accepted())
         })
     }
 
     #[inline]
-    /// Map to a DialogDetails with boolean reply type
+    /// Map to a DialogDetails with a new reply type using the handler
+    /// which receives a boolean indicating whether the dialog was rejected.
+    pub fn map_rejected<R: Any>(self, handler: impl FnOnce(bool) -> R + 'a) -> DialogDetails<'a, R> {
+        self.on_reply(|reply| {
+            (handler)(reply.rejected())
+        })
+    }
+
+    #[inline]
+    /// Convert to a DialogDetails with boolean reply type
     /// indicating whether the dialog was accepted.
-    pub fn map_accepted(self) -> DialogDetails<'a, bool> {
+    pub fn into_accepted(self) -> DialogDetails<'a, bool> {
         self.on_reply(StandardReply::accepted)
     }
 
     #[inline]
-    /// Map to a DialogDetails with boolean reply type
+    /// Convert to a DialogDetails with boolean reply type
     /// indicating whether the dialog was rejected.
-    pub fn map_rejected(self) -> DialogDetails<'a, bool> {
+    pub fn into_rejected(self) -> DialogDetails<'a, bool> {
         self.on_reply(StandardReply::rejected)
     }
 
     #[inline]
-    /// Map to a DialogDetails with a new reply type
-    /// by specifying the accepted and rejected replies.
-    pub fn map_accepted_or<R: Any>(self, accepted: R, rejected: R) -> DialogDetails<'a, R> {
+    /// Convert to a DialogDetails with a new reply type
+    /// by matching the accepted and rejected replies.
+    pub fn match_accepted<R: Any>(self, accepted: R, rejected: R) -> DialogDetails<'a, R> {
         self.on_reply(|reply| {
             if reply.accepted() {
                 accepted

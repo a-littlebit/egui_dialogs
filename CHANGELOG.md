@@ -2,6 +2,14 @@
 
 All notable changes to this crate will be documented in this file.
 
+## 0.3.3 - 2024-10-05
+
+### Changed
+
+- Renamed helper functions for mapping replies with more clear names
+
+- `Dialogs::confirm` now takes a closure to configure the dialog
+
 ## 0.3.2 - 2024-10-02
 
 ### Added
