@@ -2,6 +2,16 @@
 
 All notable changes to this crate will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Global min/max size options for dialogs
+
+### Fixed
+
+- Dialog buttons overflow without extending the dialog
+
 ## 0.3.4 - 2024-10-14
 
 ### Added

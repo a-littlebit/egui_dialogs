@@ -1,6 +1,6 @@
 use std::{any::Any, collections::VecDeque, sync::Arc};
 
-use egui::{Color32, Id, LayerId, Margin, Order, Rect, Rounding, Sense, Style, Ui, UiBuilder, WidgetText};
+use egui::{Color32, Id, LayerId, Margin, Order, Rect, Rounding, Sense, Style, Ui, UiBuilder, Vec2, WidgetText};
 
 use crate::*;
 
@@ -23,6 +23,12 @@ pub struct DialogContext {
 
     /// The dialog's mask rect.
     pub mask_rect: Rect,
+
+    /// The minimum size of the dialog.
+    pub min_size: Option<Vec2>,
+
+    /// The maximum size of the dialog.
+    pub max_size: Option<Vec2>,
 }
 
 /// The response of a dialog.
@@ -170,6 +176,12 @@ pub struct Dialogs<'a> {
 
     /// Override the style of the dialogs.
     pub style: Option<Arc<Style>>,
+
+    /// The minimum size of a dialog.
+    pub min_size: Option<Vec2>,
+
+    /// The maximum size of a dialog.
+    pub max_size: Option<Vec2>,
 }
 
 impl Dialogs<'_> {
@@ -182,6 +194,8 @@ impl Dialogs<'_> {
             animation: Some(egui::emath::easing::cubic_out),
             fading_dialog: None,
             style: None,
+            min_size: None,
+            max_size: None,
         }
     }
 
@@ -225,6 +239,20 @@ impl Dialogs<'_> {
     /// Override the style of the dialogs.
     pub fn style(mut self, style: impl Into<Arc<Style>>) -> Self {
         self.style = Some(style.into());
+        self
+    }
+
+    #[inline]
+    /// Set the minimum size of a dialog.
+    pub fn min_size(mut self, size: impl Into<Vec2>) -> Self {
+        self.min_size = Some(size.into());
+        self
+    }
+
+    #[inline]
+    /// Set the maximum size of a dialog.
+    pub fn max_size(mut self, size: impl Into<Vec2>) -> Self {
+        self.max_size = Some(size.into());
         self
     }
 }
@@ -439,6 +467,8 @@ impl Dialogs<'_> {
                 opacity: how_on,
                 already_closed,
                 mask_rect: ctx.screen_rect() - self.mask_margin,
+                min_size: self.min_size,
+                max_size: self.max_size,
             };
             if let Some(reply) = dialog.update(ctx, dctx) {
                 // if the dialog is already closed, we ignore the reply

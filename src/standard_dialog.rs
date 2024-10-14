@@ -170,26 +170,51 @@ where Reply: Clone {
     }
     
     /// Set the dialog title
+    #[inline]
     pub fn title(mut self, title: impl Into<WidgetText>) -> Self {
         self.title = title.into();
         self
     }
 
     /// Set the dialog content
+    #[inline]
     pub fn content(mut self, content: impl Into<WidgetText>) -> Self {
         self.content = content.into();
         self
     }
 
     /// Set the dialog image
+    #[inline]
     pub fn image(mut self, image: ImageSource<'i>) -> Self {
         self.image = Some(image);
         self
     }
 
     /// Set the dialog buttons
+    #[inline]
     pub fn buttons(mut self, buttons: Vec<StandardButton<Reply>>) -> Self {
         self.buttons = buttons;
+        self
+    }
+
+    /// Add a button to the dialog
+    #[inline]
+    pub fn push_button(mut self, button: StandardButton<Reply>) -> Self {
+        self.buttons.push(button);
+        self
+    }
+
+    /// Set the minimum size of the dialog
+    #[inline]
+    pub fn min_size(mut self, min_size: Vec2) -> Self {
+        self.min_size = min_size;
+        self
+    }
+
+    /// Set the maximum size of the dialog
+    #[inline]
+    pub fn max_size(mut self, max_size: Vec2) -> Self {
+        self.max_size = max_size;
         self
     }
 }
@@ -273,8 +298,10 @@ where Reply: Clone {
         let mut open = true;
 
         closable_dialog_window(ctx, dctx, title.clone(), &mut open)
-            .min_size(*min_size)
-            .max_size(*max_size)
+            // explicitly center the dialog as our button layout depends on this
+            .anchor(Align2::CENTER_CENTER, [0., 0.])
+            .min_size(min_size.max(dctx.min_size.unwrap_or(Vec2::ZERO)))
+            .max_size(max_size.min(dctx.max_size.unwrap_or(Vec2::INFINITY)))
             .show(ctx, |ui| {
                 ui.style_mut().override_font_id = Some(FontId::proportional(16.0));
                 
@@ -320,8 +347,14 @@ where Reply: Clone {
                         });
                 });
 
-                ui.shrink_width_to_current();
-                ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
+                let layout = if ui.is_sizing_pass() {
+                    Layout::left_to_right(Align::Min)
+                } else {
+                    // calc the available width for button by making sure that the dialog is centered
+                    ui.set_max_width((ctx.screen_rect().center().x - ui.next_widget_position().x).abs() * 2.);
+                    Layout::right_to_left(Align::Min)
+                };
+                ui.with_layout(layout, |ui| {
                     for (text, reply_value) in buttons.iter().rev() {
                         if ui.button(text.clone()).clicked() {
                             reply = Some(reply_value.clone());
@@ -350,7 +383,7 @@ pub fn dialog_window<'open>(
     let frame = egui::Frame::window(&ctx.style())
         .inner_margin(16.);
 
-    let window = egui::Window::new(title.into())
+    let mut window = egui::Window::new(title.into())
         .collapsible(false)
         .resizable(false)
         .anchor(Align2::CENTER_CENTER, [0., 0.])
@@ -359,11 +392,19 @@ pub fn dialog_window<'open>(
         .fade_out(dctx.animation.is_some())
         .interactable(!dctx.already_closed);
 
-    if let Some(id) = dctx.dialog_id {
-        window.id(id)
-    } else {
-        window
+    if let Some(min_size) = dctx.min_size {
+        window = window.min_size(min_size);
     }
+
+    if let Some(max_size) = dctx.max_size {
+        window = window.max_size(max_size);
+    }
+
+    if let Some(id) = dctx.dialog_id {
+        window = window.id(id);
+    }
+    
+    window
 }
 
 /// Create a suggested dialog window with a close button
