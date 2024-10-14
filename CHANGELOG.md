@@ -2,6 +2,16 @@
 
 All notable changes to this crate will be documented in this file.
 
+## 0.3.4 - 2024-10-14
+
+### Added
+
+- Added min_size and max_size options to `StandardDialog` struct
+
+### Fixed
+
+- Fixed dialog centering not properly
+
 ## 0.3.3 - 2024-10-05
 
 ### Changed

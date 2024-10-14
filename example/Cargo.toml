@@ -1,0 +1,10 @@
+[package]
+name = "egui_dialogs_example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+egui = "0.29.1"
+egui_dialogs = { path = ".." }
+egui_extras = { version = "0.29.1", features = ["all_loaders"] }
+eframe = "0.29.1"

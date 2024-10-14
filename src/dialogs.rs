@@ -123,6 +123,14 @@ where R: Any {
 /// ```rust
 /// use egui_dialogs::Dialogs;
 /// 
+/// # pub mod eframe {
+/// #     pub struct Frame;
+/// #     pub struct CreationContext<'a> { egui_ctx: &'a egui::Context }
+/// #     pub trait App {
+/// #         fn update(&mut self, ctx: &egui::Context, frame: &mut Frame);
+/// #     }
+/// # }
+/// 
 /// struct MyApp<'a> {
 ///     dialogs: Dialogs<'a>,
 /// }

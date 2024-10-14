@@ -1,4 +1,4 @@
-use egui::{include_image, vec2, Align, Align2, Image, ImageSource, Label, Layout, Rect, Sense, UiBuilder, WidgetText};
+use egui::{include_image, vec2, Align, Align2, FontId, Image, ImageSource, Label, Layout, ScrollArea, Vec2, WidgetText};
 use sys_locale::get_locales;
 
 use crate::*;
@@ -151,6 +151,8 @@ pub struct StandardDialog<'i, Reply> {
     pub content: WidgetText,
     pub image: Option<ImageSource<'i>>,
     pub buttons: Vec<StandardButton<Reply>>,
+    pub min_size: Vec2,
+    pub max_size: Vec2,
 }
 
 /// Customize a standard dialog
@@ -162,6 +164,8 @@ where Reply: Clone {
             content: content.into(),
             image: None,
             buttons: vec![],
+            min_size: Vec2::ZERO,
+            max_size: Vec2::INFINITY,
         }
     }
     
@@ -199,6 +203,8 @@ impl<'i> StandardDialog<'i, StandardReply> {
             content: content.into(),
             image: Some(ICON_INFO),
             buttons: vec![StandardReply::Ok.into()],
+            min_size: Vec2::ZERO,
+            max_size: Vec2::INFINITY,
         }
     }
 
@@ -209,6 +215,8 @@ impl<'i> StandardDialog<'i, StandardReply> {
             content: content.into(),
             image: Some(ICON_SUCCESS),
             buttons: vec![StandardReply::Ok.into()],
+            min_size: Vec2::ZERO,
+            max_size: Vec2::INFINITY,
         }
     }
 
@@ -219,6 +227,8 @@ impl<'i> StandardDialog<'i, StandardReply> {
             content: content.into(),
             image: Some(ICON_CONFIRM),
             buttons: vec![StandardReply::Yes.into(), StandardReply::No.into()],
+            min_size: Vec2::ZERO,
+            max_size: Vec2::INFINITY,
         }
     }
 
@@ -229,6 +239,8 @@ impl<'i> StandardDialog<'i, StandardReply> {
             content: content.into(),
             image: Some(ICON_WARNING),
             buttons: vec![StandardReply::Ok.into()],
+            min_size: Vec2::ZERO,
+            max_size: Vec2::INFINITY,
         }
     }
 
@@ -239,6 +251,8 @@ impl<'i> StandardDialog<'i, StandardReply> {
             content: content.into(),
             image: Some(ICON_ERROR),
             buttons: vec![StandardReply::Ok.into()],
+            min_size: Vec2::ZERO,
+            max_size: Vec2::INFINITY,
         }
     }
 }
@@ -251,70 +265,70 @@ where Reply: Clone {
             content,
             image,
             buttons,
+            min_size,
+            max_size,
         } = self;
 
         let mut reply = None;
         let mut open = true;
 
         closable_dialog_window(ctx, dctx, title.clone(), &mut open)
+            .min_size(*min_size)
+            .max_size(*max_size)
             .show(ctx, |ui| {
-                let available_rect = dctx.mask_rect - ctx.style().spacing.window_margin;
-                let content_rect = {
-                    let mut size = available_rect.size();
-                    size.x = size.x.min(800.);
-                    Rect::from_min_size(ui.next_widget_position(), size)
-                };
-
-                let mut content_ui = ui.new_child(
-                    UiBuilder::new().max_rect(content_rect)
-                );
+                ui.style_mut().override_font_id = Some(FontId::proportional(16.0));
                 
-                content_ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing = vec2(8., 8.);
-                    ui.style_mut().override_font_id = Some(egui::FontId::proportional(15.));
+                ui.horizontal_top(|ui| {
+                    const IMAGE_WIDTH: f32 = 48.;
+                    
+                    let max_width = dctx.mask_rect.width()
+                        - ui.spacing().window_margin.right
+                        - 24.; // reserve some space for better appearance
+                    let max_height = {
+                        let text_height = ui.style()
+                            .text_styles
+                            .get(&egui::TextStyle::Button)
+                            .map(|f| f.size)
+                            .unwrap_or(20.)
+                            * 1.5;
+
+                        dctx.mask_rect.bottom()
+                            - ui.next_widget_position().y
+                            - ui.spacing().item_spacing.y
+                            - ui.spacing().button_padding.y * 2.
+                            - text_height
+                            - ui.spacing().window_margin.bottom
+                            - 24. // reserve some space for better appearance
+                    };
+
+                    ui.set_max_size(vec2(max_width, max_height));
 
                     if let Some(image) = image {
                         ui.add(
                             Image::new(image.clone())
-                                .fit_to_exact_size(vec2(48., 48.))
+                                .fit_to_exact_size(vec2(IMAGE_WIDTH, IMAGE_WIDTH))
                         );
                     }
                     
-                    ui.add(
-                        Label::new(content.clone())
-                            .wrap()
-                    );
+                    ScrollArea::vertical()
+                        .auto_shrink([true, true])
+                        .show(ui, |ui| {
+                            ui.add(
+                                Label::new(content.clone())
+                                    .wrap()
+                            );
+                        });
                 });
 
-                ui.allocate_rect(content_ui.min_rect(), Sense::hover());
-                
-                ui.add_space(8.);
-
-                let button_rect = {
-                    let mut rect = ui.min_rect();
-                    rect.min.x = ctx.screen_rect().min.x;
-                    rect.min.y = rect.max.y;
-                    rect.max.y = ui.available_rect_before_wrap().max.y;
-                    rect
-                };
-
-                let mut button_ui = ui.new_child(
-                    UiBuilder::new()
-                        .max_rect(button_rect)
-                        .layout(Layout::right_to_left(Align::TOP))
-                );
-                
-                button_ui.spacing_mut().button_padding = vec2(12., 4.);
-                button_ui.style_mut().override_font_id = Some(egui::FontId::monospace(20.));
-
-                for (text, reply_value) in buttons.iter().rev() {
-                    if button_ui.button(text.clone()).clicked() {
-                        reply = Some(reply_value.clone());
-                        break;
+                ui.shrink_width_to_current();
+                ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
+                    for (text, reply_value) in buttons.iter().rev() {
+                        if ui.button(text.clone()).clicked() {
+                            reply = Some(reply_value.clone());
+                            break;
+                        }
                     }
-                }
-
-                ui.allocate_rect(button_ui.min_rect(), Sense::hover());
+                });
             });
 
         if let Some(reply_value) = reply {
@@ -339,9 +353,8 @@ pub fn dialog_window<'open>(
     let window = egui::Window::new(title.into())
         .collapsible(false)
         .resizable(false)
-        .pivot(Align2::CENTER_CENTER)
+        .anchor(Align2::CENTER_CENTER, [0., 0.])
         .frame(frame)
-        .constrain_to(dctx.mask_rect)
         .fade_in(dctx.animation.is_some())
         .fade_out(dctx.animation.is_some())
         .interactable(!dctx.already_closed);

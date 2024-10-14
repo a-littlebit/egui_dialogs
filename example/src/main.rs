@@ -132,9 +132,11 @@ impl eframe::App for DialogApp<'_> {
         if ctx.input(|i| i.viewport().close_requested()) {
             if !self.allow_to_close {
                 ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-                DialogDetails::confirm("Close", "Are you sure you want to close the window?")
-                    .with_id(CLOSE_CONFIRM_DIALOG_ID)
-                    .show(&mut self.dialogs);
+                self.dialogs.confirm(
+                    "Close",
+                    "Are you sure you want to close the window?",
+                    |d| d.with_id(CLOSE_CONFIRM_DIALOG_ID)
+                );
             }
         }
         
