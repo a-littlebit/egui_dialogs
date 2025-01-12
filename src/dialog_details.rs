@@ -9,11 +9,11 @@ use crate::*;
 
 /// Represents a dialog.
 /// Implement this trait to customize dialogs.
-/// 
+///
 /// # Example
 /// ```
 /// use egui_dialogs::{dialog_window, Dialog, DialogContext};
-/// 
+///
 /// // custom dialog for name confirmation
 /// pub struct NameConfirmDialog {
 ///   name: String,
@@ -53,7 +53,7 @@ pub trait Dialog<Reply> {
 
 /// Details of a dialog to be shown and replied.
 /// Used to build and show dialogs.
-/// 
+///
 /// # Example
 /// ```
 /// use egui_dialogs::{DialogDetails, StandardReply};
@@ -85,21 +85,24 @@ pub trait Dialog<Reply> {
 /// # }
 /// ```
 pub struct DialogDetails<'a, Reply>
-where Reply: 'a + Any {
+where
+    Reply: 'a + Any,
+{
     pub(crate) dialog: Box<dyn Dialog<Reply> + 'a>,
     pub(crate) mask: Option<Color32>,
     pub(crate) id: Option<Id>,
 }
 
 impl<'a, Reply> DialogDetails<'a, Reply>
-where Reply: 'a + Any {
+where
+    Reply: 'a + Any,
+{
     #[inline]
     /// Create a `DialogDetails` struct with the specified dialog.
-    pub fn new(dialog: impl Dialog<Reply> + 'a) -> Self
-    {
+    pub fn new(dialog: impl Dialog<Reply> + 'a) -> Self {
         Self::new_dyn(Box::new(dialog))
     }
-    
+
     pub fn new_dyn(dialog: Box<dyn Dialog<Reply> + 'a>) -> Self {
         Self {
             dialog,
@@ -117,7 +120,10 @@ where Reply: 'a + Any {
 
     #[inline]
     /// dynamic version of [`Self::on_reply`]
-    pub fn on_reply_dyn<R: Any>(self, handler: Box<dyn FnOnce(Reply) -> R + 'a>) -> DialogDetails<'a, R> {
+    pub fn on_reply_dyn<R: Any>(
+        self,
+        handler: Box<dyn FnOnce(Reply) -> R + 'a>,
+    ) -> DialogDetails<'a, R> {
         struct MappedDialog<'m, From, To> {
             dialog: Box<dyn Dialog<From> + 'm>,
             mapper: Option<Box<dyn FnOnce(From) -> To + 'm>>,
@@ -125,9 +131,9 @@ where Reply: 'a + Any {
 
         impl<'m, From, To> Dialog<To> for MappedDialog<'m, From, To> {
             fn show(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<To> {
-                self.dialog.show(ctx, dctx).and_then(|from| {
-                    self.mapper.take().map(|mapper| (mapper)(from))
-                })
+                self.dialog
+                    .show(ctx, dctx)
+                    .and_then(|from| self.mapper.take().map(|mapper| (mapper)(from)))
             }
         }
 
@@ -189,41 +195,31 @@ impl StandardDialogDetails<'_> {
     #[inline]
     /// Create a `DialogDetails` struct with an info dialog.
     pub fn info(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
-        StandardDialogDetails::new(
-            StandardDialog::info(title, message)
-        )
+        StandardDialogDetails::new(StandardDialog::info(title, message))
     }
 
     #[inline]
     /// Create a `DialogDetails` struct with a success dialog.
     pub fn success(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
-        StandardDialogDetails::new(
-            StandardDialog::success(title, message)
-        )
+        StandardDialogDetails::new(StandardDialog::success(title, message))
     }
 
     #[inline]
     /// Create a `DialogDetails` struct with a confirm dialog.
     pub fn confirm(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
-        StandardDialogDetails::new(
-            StandardDialog::confirm(title, message)
-        )
+        StandardDialogDetails::new(StandardDialog::confirm(title, message))
     }
 
     #[inline]
     /// Create a `DialogDetails` struct with a warning dialog.
     pub fn warning(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
-        StandardDialogDetails::new(
-            StandardDialog::warning(title, message)
-        )
+        StandardDialogDetails::new(StandardDialog::warning(title, message))
     }
 
     #[inline]
     /// Create a `DialogDetails` struct with an error dialog.
     pub fn error(title: impl Into<WidgetText>, message: impl Into<WidgetText>) -> Self {
-        StandardDialogDetails::new(
-            StandardDialog::error(title, message)
-        )
+        StandardDialogDetails::new(StandardDialog::error(title, message))
     }
 }
 
@@ -249,23 +245,25 @@ impl<'a> StandardDialogDetails<'a> {
             reply
         })
     }
-    
+
     #[inline]
     /// Map to a DialogDetails with a new reply type using the handler
     /// which receives a boolean indicating whether the dialog was accepted.
-    pub fn map_accepted<R: Any>(self, handler: impl FnOnce(bool) -> R + 'a) -> DialogDetails<'a, R> {
-        self.on_reply(|reply| {
-            (handler)(reply.accepted())
-        })
+    pub fn map_accepted<R: Any>(
+        self,
+        handler: impl FnOnce(bool) -> R + 'a,
+    ) -> DialogDetails<'a, R> {
+        self.on_reply(|reply| (handler)(reply.accepted()))
     }
 
     #[inline]
     /// Map to a DialogDetails with a new reply type using the handler
     /// which receives a boolean indicating whether the dialog was rejected.
-    pub fn map_rejected<R: Any>(self, handler: impl FnOnce(bool) -> R + 'a) -> DialogDetails<'a, R> {
-        self.on_reply(|reply| {
-            (handler)(reply.rejected())
-        })
+    pub fn map_rejected<R: Any>(
+        self,
+        handler: impl FnOnce(bool) -> R + 'a,
+    ) -> DialogDetails<'a, R> {
+        self.on_reply(|reply| (handler)(reply.rejected()))
     }
 
     #[inline]
@@ -286,12 +284,6 @@ impl<'a> StandardDialogDetails<'a> {
     /// Convert to a DialogDetails with a new reply type
     /// by matching the accepted and rejected replies.
     pub fn match_accepted<R: Any>(self, accepted: R, rejected: R) -> DialogDetails<'a, R> {
-        self.on_reply(|reply| {
-            if reply.accepted() {
-                accepted
-            } else {
-                rejected
-            }
-        })
+        self.on_reply(|reply| if reply.accepted() { accepted } else { rejected })
     }
 }

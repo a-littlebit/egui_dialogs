@@ -39,7 +39,7 @@
 //! #     // ... your other app states
 //! #     dialogs: Dialogs<'a>,
 //! # }
-//! 
+//!
 //! impl MyApp<'_> {
 //!     // ... your other app logic
 //!
@@ -74,7 +74,7 @@
 //! ```
 //!
 //! ### Handle reply
-//! 
+//!
 //! #### Using callback functions
 //!
 //! Use `DialogDetails` struct to build
@@ -84,9 +84,9 @@
 //!
 //! ```
 //! use std::{cell::RefCell, rc::Rc};
-//! 
+//!
 //! use egui_dialogs::{DialogDetails, StandardReply};
-//! 
+//!
 //! # use egui_dialogs::Dialogs;
 //! #
 //! # pub struct MyApp<'a> {
@@ -95,7 +95,7 @@
 //! // in your app state
 //! pub allow_to_close: Rc<RefCell<bool>>,
 //! // and initialize it with false
-//! 
+//!
 //! # }
 //! #
 //! # impl MyApp<'_> {
@@ -129,7 +129,7 @@
 //! #     }
 //! # }
 //! ```
-//! 
+//!
 //! #### Using IDs
 //!
 //! As rust compiler thinks that your dialog callbacks may be called at any time, it limits your callback from visiting your app states.
@@ -148,7 +148,7 @@
 //! // in your app state
 //! pub allow_to_close: bool,
 //! // and initialize it with false
-//! 
+//!
 //! # }
 //! #
 //! # impl MyApp<'_> {
@@ -258,7 +258,7 @@
 //! # }
 //! #
 //! use egui_dialogs::{dialog_window, Dialog, DialogContext};
-//! 
+//!
 //! impl Dialog<String> for NameConfirmDialog {
 //!   fn show(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<String> {
 //!     // return None if the user hasn't replied
@@ -291,7 +291,7 @@
 //! # }
 //! #
 //! # use egui_dialogs::{dialog_window, Dialog, DialogDetails, DialogContext};
-//! # 
+//! #
 //! # impl Dialog<String> for NameConfirmDialog {
 //! #   fn show(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<String> {
 //! #     // return None if the user hasn't replied

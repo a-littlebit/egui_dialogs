@@ -9,5 +9,9 @@ repository = "https://github.com/a-littlebit/egui_dialogs"
 readme = "README.md"
 
 [dependencies]
-egui = "0.29.1"
+egui = "0.30.0"
 sys-locale = "0.3.1"
+
+[dev-dependencies]
+egui_extras = { version = "0.30.0", features = ["all_loaders"] }
+eframe = "0.30.0"

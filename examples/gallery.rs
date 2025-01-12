@@ -4,29 +4,28 @@ use egui_dialogs::{dialog_window, Dialog, DialogContext, DialogDetails, Dialogs,
 fn main() -> Result<(), eframe::Error> {
     // Create native window
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-                      .with_inner_size([400.0, 300.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([400.0, 300.0]),
         centered: true,
         ..Default::default()
     };
 
     // Run native app
     eframe::run_native(
-        "egui dialogs example", // window title
-        options, // viewport options
+        "egui dialogs gallery", // window title
+        options,                // viewport options
         Box::new(|cc| {
             // the crate uses egui_extra for standard icon loading
             egui_extras::install_image_loaders(&cc.egui_ctx);
             // we transtale standard button texts into native language
             // according to system locale.
             // setup a font to support non-latin characters
-            // 
+            //
             // deprecated for crates.io uploading package size limit
             // setup_custom_fonts(&cc.egui_ctx);
 
             // setup custom style
             setup_style(&cc.egui_ctx);
-            
+
             // Create the app instance
             Ok(Box::new(DialogApp::new(cc)))
         }),
@@ -96,12 +95,12 @@ impl DialogApp<'_> {
     }
 }
 
-impl eframe::App for DialogApp<'_> {  
+impl eframe::App for DialogApp<'_> {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         const CLOSE_CONFIRM_DIALOG_ID: &str = "close_confirm_dialog";
         const NAME_CONFIRM_DIALOG_ID: &str = "name_confirm_dialog";
         const NAME_INPUT_CONFIRM_DIALOG_ID: &str = "name_input_confirm_dialog";
-        
+
         // Show dialogs and handle the reply if there is one
         if let Some(res) = self.dialogs.show(ctx) {
             if res.is_reply_of(CLOSE_CONFIRM_DIALOG_ID) {
@@ -109,21 +108,21 @@ impl eframe::App for DialogApp<'_> {
                     Ok(StandardReply::Yes) => {
                         self.allow_to_close = true;
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                    },
+                    }
                     _ => {}
                 }
             } else if res.is_reply_of(NAME_CONFIRM_DIALOG_ID) {
                 match res.reply() {
                     Ok(StandardReply::No) => {
                         self.confirmed_name = "".into();
-                    },
+                    }
                     _ => {}
                 }
             } else if res.is_reply_of(NAME_INPUT_CONFIRM_DIALOG_ID) {
                 match res.reply() {
                     Ok(name) => {
                         self.confirmed_name = name;
-                    },
+                    }
                     _ => {}
                 }
             }
@@ -132,14 +131,13 @@ impl eframe::App for DialogApp<'_> {
         if ctx.input(|i| i.viewport().close_requested()) {
             if !self.allow_to_close {
                 ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-                self.dialogs.confirm(
-                    "Close",
-                    "Are you sure you want to close the window?",
-                    |d| d.with_id(CLOSE_CONFIRM_DIALOG_ID)
-                );
+                self.dialogs
+                    .confirm("Close", "Are you sure you want to close the window?", |d| {
+                        d.with_id(CLOSE_CONFIRM_DIALOG_ID)
+                    });
             }
         }
-        
+
         CentralPanel::default().show(ctx, |ui| {
             ui.heading("egui dialogs example");
 
@@ -158,17 +156,19 @@ impl eframe::App for DialogApp<'_> {
                 if ui.button("Show info dialog").clicked() {
                     self.dialogs.info(self.title.clone(), self.content.clone());
                 }
-                
+
                 if ui.button("Show success dialog").clicked() {
-                    self.dialogs.success(self.title.clone(), self.content.clone());
+                    self.dialogs
+                        .success(self.title.clone(), self.content.clone());
                 }
             });
 
             ui.horizontal(|ui| {
                 if ui.button("Show warning dialog").clicked() {
-                    self.dialogs.warning(self.title.clone(), self.content.clone());
+                    self.dialogs
+                        .warning(self.title.clone(), self.content.clone());
                 }
-                
+
                 if ui.button("Show error dialog").clicked() {
                     self.dialogs.error(self.title.clone(), self.content.clone());
                 }
@@ -178,8 +178,8 @@ impl eframe::App for DialogApp<'_> {
                 // Show standard confirm dialog with id
                 if ui.button("Show confirm dialog").clicked() {
                     DialogDetails::confirm(
-                        "Confirm name", 
-                        format!("Is your name {}?", self.confirmed_name)
+                        "Confirm name",
+                        format!("Is your name {}?", self.confirmed_name),
                     )
                     .with_id(NAME_CONFIRM_DIALOG_ID)
                     .show(&mut self.dialogs);
@@ -192,7 +192,7 @@ impl eframe::App for DialogApp<'_> {
                         .show_if_absent(&mut self.dialogs);
                 }
             });
-            
+
             if !self.confirmed_name.is_empty() {
                 ui.label(format!("Your name is {}", self.confirmed_name));
             }
@@ -218,16 +218,15 @@ impl Dialog<String> for NameConfirmDialog {
         let mut res = None;
 
         // draw the dialog
-        dialog_window(ctx, dctx, "Confirm name")
-            .show(ctx, |ui| {
-                ui.label("Your name: ");
-                ui.text_edit_singleline(&mut self.name);
-                if ui.button("Done").clicked() {
-                    // set the reply and end the dialog
-                    res = Some(self.name.clone());
-                }
-            });
-            
+        dialog_window(ctx, dctx, "Confirm name").show(ctx, |ui| {
+            ui.label("Your name: ");
+            ui.text_edit_singleline(&mut self.name);
+            if ui.button("Done").clicked() {
+                // set the reply and end the dialog
+                res = Some(self.name.clone());
+            }
+        });
+
         res
     }
 }

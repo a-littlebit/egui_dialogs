@@ -1,4 +1,7 @@
-use egui::{include_image, vec2, Align, Align2, FontId, Image, ImageSource, Label, Layout, ScrollArea, Vec2, WidgetText};
+use egui::{
+    include_image, vec2, Align, Align2, FontId, Image, ImageSource, Label, Layout, ScrollArea,
+    Vec2, WidgetText,
+};
 use sys_locale::get_locales;
 
 use crate::*;
@@ -13,56 +16,56 @@ const ICON_ERROR: ImageSource = include_image!("assets/error.svg");
 // we offer the same language supports as those offered by rust-lang.org
 type StandardReplyTranslation = [(&'static str, &'static str); 10];
 
-const STANDARD_OK_REPLY: StandardReplyTranslation = [  
-    ("en-US", "OK"),  
-    ("zh-CN", "确定"),  
-    ("zh-TW", "確定"),  
+const STANDARD_OK_REPLY: StandardReplyTranslation = [
+    ("en-US", "OK"),
+    ("zh-CN", "确定"),
+    ("zh-TW", "確定"),
     ("es", "OK"),
-    ("fr", "D'accord"),  
+    ("fr", "D'accord"),
     ("it", "OK"),
-    ("ja", "はい"),  
+    ("ja", "はい"),
     ("pt-BR", "OK"),
-    ("ru", "Хорошо"),  
-    ("tr", "Tamam"),  
+    ("ru", "Хорошо"),
+    ("tr", "Tamam"),
 ];
 
-const STANDARD_CANCEL_REPLY: StandardReplyTranslation = [  
-    ("en-US", "Cancel"),  
-    ("zh-CN", "取消"),  
-    ("zh-TW", "取消"),  
-    ("es", "Cancelar"),  
-    ("fr", "Annuler"),  
-    ("it", "Annulla"),  
-    ("ja", "キャンセル"),  
-    ("pt-BR", "Cancelar"),  
-    ("ru", "Отмена"),  
-    ("tr", "İptal"),  
+const STANDARD_CANCEL_REPLY: StandardReplyTranslation = [
+    ("en-US", "Cancel"),
+    ("zh-CN", "取消"),
+    ("zh-TW", "取消"),
+    ("es", "Cancelar"),
+    ("fr", "Annuler"),
+    ("it", "Annulla"),
+    ("ja", "キャンセル"),
+    ("pt-BR", "Cancelar"),
+    ("ru", "Отмена"),
+    ("tr", "İptal"),
 ];
 
-const STANDARD_YES_REPLY: StandardReplyTranslation = [  
-    ("en-US", "Yes"),  
-    ("zh-CN", "是"),  
-    ("zh-TW", "是"),  
-    ("es", "Sí"),  
-    ("fr", "Oui"),  
-    ("it", "Sì"),  
-    ("ja", "はい"),  
-    ("pt-BR", "Sim"),  
-    ("ru", "Да"),  
-    ("tr", "Evet"),  
+const STANDARD_YES_REPLY: StandardReplyTranslation = [
+    ("en-US", "Yes"),
+    ("zh-CN", "是"),
+    ("zh-TW", "是"),
+    ("es", "Sí"),
+    ("fr", "Oui"),
+    ("it", "Sì"),
+    ("ja", "はい"),
+    ("pt-BR", "Sim"),
+    ("ru", "Да"),
+    ("tr", "Evet"),
 ];
 
-const STANDARD_NO_REPLY: [(&'static str, &'static str); 10] = [  
-    ("en-US", "No"),  
-    ("zh-CN", "否"),  
-    ("zh-TW", "否"),  
-    ("es", "No"),  
-    ("fr", "Non"),  
-    ("it", "No"),  
-    ("ja", "いいえ"),  
-    ("pt-BR", "Não"),  
-    ("ru", "Нет"),  
-    ("tr", "Hayır"),  
+const STANDARD_NO_REPLY: [(&'static str, &'static str); 10] = [
+    ("en-US", "No"),
+    ("zh-CN", "否"),
+    ("zh-TW", "否"),
+    ("es", "No"),
+    ("fr", "Non"),
+    ("it", "No"),
+    ("ja", "いいえ"),
+    ("pt-BR", "Não"),
+    ("ru", "Нет"),
+    ("tr", "Hayır"),
 ];
 
 #[inline]
@@ -101,10 +104,10 @@ pub enum StandardReply {
 impl StandardReply {
     pub fn localize(self) -> String {
         match self {
-            StandardReply::Ok =>     translate_standard_reply(STANDARD_OK_REPLY),
+            StandardReply::Ok => translate_standard_reply(STANDARD_OK_REPLY),
             StandardReply::Cancel => translate_standard_reply(STANDARD_CANCEL_REPLY),
-            StandardReply::Yes =>    translate_standard_reply(STANDARD_YES_REPLY),
-            StandardReply::No =>     translate_standard_reply(STANDARD_NO_REPLY),
+            StandardReply::Yes => translate_standard_reply(STANDARD_YES_REPLY),
+            StandardReply::No => translate_standard_reply(STANDARD_NO_REPLY),
         }
     }
 
@@ -143,7 +146,7 @@ pub type StandardButton<Reply> = (WidgetText, Reply);
 /// A standard dialog.
 /// Use `Dialogs::info`, `Dialogs::warn`, ...
 /// to directly show a standard dialog.
-/// 
+///
 /// Or use `StandardDialog::info`, `StandardDialog::warn`, ...
 /// to create a customizable standard dialog
 pub struct StandardDialog<'i, Reply> {
@@ -157,7 +160,9 @@ pub struct StandardDialog<'i, Reply> {
 
 /// Customize a standard dialog
 impl<'i, Reply> StandardDialog<'i, Reply>
-where Reply: Clone {
+where
+    Reply: Clone,
+{
     pub fn new(title: impl Into<WidgetText>, content: impl Into<WidgetText>) -> Self {
         Self {
             title: title.into(),
@@ -168,7 +173,7 @@ where Reply: Clone {
             max_size: Vec2::INFINITY,
         }
     }
-    
+
     /// Set the dialog title
     #[inline]
     pub fn title(mut self, title: impl Into<WidgetText>) -> Self {
@@ -283,7 +288,9 @@ impl<'i> StandardDialog<'i, StandardReply> {
 }
 
 impl<'i, Reply> Dialog<Reply> for StandardDialog<'i, Reply>
-where Reply: Clone {
+where
+    Reply: Clone,
+{
     fn show(&mut self, ctx: &egui::Context, dctx: &DialogContext) -> Option<Reply> {
         let Self {
             title,
@@ -304,15 +311,14 @@ where Reply: Clone {
             .max_size(max_size.min(dctx.max_size.unwrap_or(Vec2::INFINITY)))
             .show(ctx, |ui| {
                 ui.style_mut().override_font_id = Some(FontId::proportional(16.0));
-                
+
                 ui.horizontal_top(|ui| {
                     const IMAGE_WIDTH: f32 = 48.;
-                    
-                    let max_width = dctx.mask_rect.width()
-                        - ui.spacing().window_margin.right
-                        - 24.; // reserve some space for better appearance
+
+                    let max_width = dctx.mask_rect.width() - ui.spacing().window_margin.right - 24.; // reserve some space for better appearance
                     let max_height = {
-                        let text_height = ui.style()
+                        let text_height = ui
+                            .style()
                             .text_styles
                             .get(&egui::TextStyle::Button)
                             .map(|f| f.size)
@@ -333,17 +339,14 @@ where Reply: Clone {
                     if let Some(image) = image {
                         ui.add(
                             Image::new(image.clone())
-                                .fit_to_exact_size(vec2(IMAGE_WIDTH, IMAGE_WIDTH))
+                                .fit_to_exact_size(vec2(IMAGE_WIDTH, IMAGE_WIDTH)),
                         );
                     }
-                    
+
                     ScrollArea::vertical()
                         .auto_shrink([true, true])
                         .show(ui, |ui| {
-                            ui.add(
-                                Label::new(content.clone())
-                                    .wrap()
-                            );
+                            ui.add(Label::new(content.clone()).wrap());
                         });
                 });
 
@@ -351,7 +354,9 @@ where Reply: Clone {
                     Layout::left_to_right(Align::Min)
                 } else {
                     // calc the available width for button by making sure that the dialog is centered
-                    ui.set_max_width((ctx.screen_rect().center().x - ui.next_widget_position().x).abs() * 2.);
+                    ui.set_max_width(
+                        (ctx.screen_rect().center().x - ui.next_widget_position().x).abs() * 2.,
+                    );
                     Layout::right_to_left(Align::Min)
                 };
                 ui.with_layout(layout, |ui| {
@@ -378,10 +383,9 @@ where Reply: Clone {
 pub fn dialog_window<'open>(
     ctx: &egui::Context,
     dctx: &DialogContext,
-    title: impl Into<WidgetText>
+    title: impl Into<WidgetText>,
 ) -> egui::Window<'open> {
-    let frame = egui::Frame::window(&ctx.style())
-        .inner_margin(16.);
+    let frame = egui::Frame::window(&ctx.style()).inner_margin(16.);
 
     let mut window = egui::Window::new(title.into())
         .collapsible(false)
@@ -403,7 +407,7 @@ pub fn dialog_window<'open>(
     if let Some(id) = dctx.dialog_id {
         window = window.id(id);
     }
-    
+
     window
 }
 
@@ -413,7 +417,7 @@ pub fn closable_dialog_window<'open>(
     ctx: &egui::Context,
     dctx: &DialogContext,
     title: impl Into<WidgetText>,
-    open: &'open mut bool
+    open: &'open mut bool,
 ) -> egui::Window<'open> {
     if dctx.already_closed {
         *open = false;

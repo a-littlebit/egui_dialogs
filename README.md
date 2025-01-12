@@ -10,7 +10,7 @@ Platform-agnostic, customizable dialogs for egui library.
 
 ```bash
 # cd into the crate directory
-cargo run --example dialogs
+cargo run --example gallery
 ```
 
 ### Basic usage
