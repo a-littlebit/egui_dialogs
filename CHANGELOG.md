@@ -2,6 +2,12 @@
 
 All notable changes to this crate will be documented in this file.
 
+## 0.3.6 - 2025-01-12
+
+### Changed
+
+- Updated egui to 0.30.0
+
 ## 0.3.5 - 2024-10-14
 
 ### Added
