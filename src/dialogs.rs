@@ -1,7 +1,7 @@
 use std::{any::Any, collections::VecDeque, sync::Arc};
 
 use egui::{
-    Color32, Id, LayerId, Margin, Order, Rect, Rounding, Sense, Style, Ui, UiBuilder, Vec2,
+    Color32, CornerRadius, Id, LayerId, Margin, Order, Rect, Sense, Style, Ui, UiBuilder, Vec2,
     WidgetText,
 };
 
@@ -166,7 +166,7 @@ pub struct Dialogs<'a> {
     pub mask_margin: Margin,
     /// The rounding of the mask.
     /// This is useful if your window has rounded corners.
-    pub mask_rounding: Rounding,
+    pub mask_rounding: CornerRadius,
 
     /// The animation function.
     /// Set to None to disable animation.
@@ -190,7 +190,7 @@ impl Dialogs<'_> {
         Self {
             dialogs: VecDeque::new(),
             mask_margin: Margin::ZERO,
-            mask_rounding: Rounding::ZERO,
+            mask_rounding: CornerRadius::ZERO,
             animation: Some(egui::emath::easing::cubic_out),
             fading_dialog: None,
             style: None,
@@ -208,7 +208,7 @@ impl Dialogs<'_> {
 
     #[inline]
     /// Set the rounding of the background mask.
-    pub fn mask_rounding(mut self, rounding: impl Into<Rounding>) -> Self {
+    pub fn mask_rounding(mut self, rounding: impl Into<CornerRadius>) -> Self {
         self.mask_rounding = rounding.into();
         self
     }

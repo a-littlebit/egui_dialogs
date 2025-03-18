@@ -308,34 +308,13 @@ where
             // explicitly center the dialog as our button layout depends on this
             .anchor(Align2::CENTER_CENTER, [0., 0.])
             .min_size(min_size.max(dctx.min_size.unwrap_or(Vec2::ZERO)))
-            .max_size(max_size.min(dctx.max_size.unwrap_or(Vec2::INFINITY)))
+            .max_size(max_size.min(dctx.max_size.unwrap_or(dctx.mask_rect.size())))
             .show(ctx, |ui| {
                 ui.style_mut().override_font_id = Some(FontId::proportional(16.0));
 
                 ui.horizontal_top(|ui| {
                     const IMAGE_WIDTH: f32 = 48.;
-
-                    let max_width = dctx.mask_rect.width() - ui.spacing().window_margin.right - 24.; // reserve some space for better appearance
-                    let max_height = {
-                        let text_height = ui
-                            .style()
-                            .text_styles
-                            .get(&egui::TextStyle::Button)
-                            .map(|f| f.size)
-                            .unwrap_or(20.)
-                            * 1.5;
-
-                        dctx.mask_rect.bottom()
-                            - ui.next_widget_position().y
-                            - ui.spacing().item_spacing.y
-                            - ui.spacing().button_padding.y * 2.
-                            - text_height
-                            - ui.spacing().window_margin.bottom
-                            - 24. // reserve some space for better appearance
-                    };
-
-                    ui.set_max_size(vec2(max_width, max_height));
-
+                    
                     if let Some(image) = image {
                         ui.add(
                             Image::new(image.clone())
@@ -343,8 +322,20 @@ where
                         );
                     }
 
+                    let text_height = ui
+                        .style()
+                        .text_styles
+                        .get(&egui::TextStyle::Button)
+                        .map(|f| f.size)
+                        .unwrap_or(20.)
+                        * 1.5;
+                    let max_height = ui.max_rect().height()
+                        - ui.spacing().item_spacing.y
+                        - ui.spacing().button_padding.y * 2.
+                        - text_height;
                     ScrollArea::vertical()
                         .auto_shrink([true, true])
+                        .max_height(max_height)
                         .show(ui, |ui| {
                             ui.add(Label::new(content.clone()).wrap());
                         });
@@ -353,7 +344,7 @@ where
                 let layout = if ui.is_sizing_pass() {
                     Layout::left_to_right(Align::Min)
                 } else {
-                    // calc the available width for button by making sure that the dialog is centered
+                    // infer available width for the buttons from the dialog's position
                     ui.set_max_width(
                         (ctx.screen_rect().center().x - ui.next_widget_position().x).abs() * 2.,
                     );
