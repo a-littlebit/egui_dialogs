@@ -367,7 +367,7 @@ impl Dialogs<'_> {
             id,
         };
 
-        let mask_rect = ctx.screen_rect() - self.mask_margin;
+        let mask_rect = ctx.content_rect() - self.mask_margin;
         let mut mask_ui = Ui::new(
             ctx.clone(),
             id,
@@ -467,7 +467,7 @@ impl Dialogs<'_> {
                 animation: self.animation,
                 opacity: how_on,
                 already_closed,
-                mask_rect: ctx.screen_rect() - self.mask_margin,
+                mask_rect: ctx.content_rect() - self.mask_margin,
                 min_size: self.min_size,
                 max_size: self.max_size,
             };

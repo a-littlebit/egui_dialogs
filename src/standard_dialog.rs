@@ -346,7 +346,7 @@ where
                 } else {
                     // infer available width for the buttons from the dialog's position
                     ui.set_max_width(
-                        (ctx.screen_rect().center().x - ui.next_widget_position().x).abs() * 2.,
+                        (ctx.content_rect().center().x - ui.next_widget_position().x).abs() * 2.,
                     );
                     Layout::right_to_left(Align::Min)
                 };
