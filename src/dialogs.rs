@@ -281,15 +281,15 @@ impl<'a> Dialogs<'a> {
     #[inline]
     /// Show a dialog if it is not already open.
     pub fn add_if_absent<Reply: 'a + Any>(&mut self, dialog: DialogDetails<'a, Reply>) {
-        if dialog.id.map_or(true, |id| !self.is_open(id)) {
+        if dialog.id.is_none_or(|id| !self.is_open(id)) {
             self.add(dialog);
         }
     }
 
     /// Get the currently open dialog.
     #[inline]
-    pub fn current_dialog(&self) -> Option<&Box<dyn AbstractDialog + 'a>> {
-        self.dialogs.front()
+    pub fn current_dialog(&self) -> Option<&(dyn AbstractDialog + 'a)> {
+        self.dialogs.front().map(|v| &**v)
     }
 
     #[inline]
@@ -307,8 +307,8 @@ impl<'a> Dialogs<'a> {
 
     /// Get the last dialog.
     #[inline]
-    pub fn last_dialog(&self) -> Option<&Box<dyn AbstractDialog + 'a>> {
-        self.dialogs.back()
+    pub fn last_dialog(&self) -> Option<&(dyn AbstractDialog + 'a)> {
+        self.dialogs.back().map(|v| &**v)
     }
 
     /// Pop the last dialog.
@@ -363,7 +363,7 @@ impl Dialogs<'_> {
         };
 
         let layer_id = LayerId {
-            order: egui::Order::Background,
+            order: egui::Order::Middle,
             id,
         };
 
@@ -381,17 +381,17 @@ impl Dialogs<'_> {
             .rect_filled(mask_rect, self.mask_rounding, color);
 
         // cover the layer to forbid interact with background widgets
-        mask_ui.allocate_rect(mask_rect, Sense::hover());
+        mask_ui.allocate_rect(mask_rect, Sense::all());
 
         // forbid focus on the background
         let focused = ctx
             .memory(|r| r.focused())
             .and_then(|id| ctx.read_response(id));
 
-        if let Some(focused) = focused {
-            if focused.layer_id.order == Order::Background {
-                focused.surrender_focus();
-            }
+        if let Some(focused) = focused
+            && matches!(focused.layer_id.order, Order::Middle | Order::Background)
+        {
+            focused.surrender_focus();
         }
 
         how_on
@@ -455,8 +455,8 @@ impl Dialogs<'_> {
             let mut response = DialogResponse { id, reply: None };
 
             let outer_style = if let Some(ref style) = self.style {
-                let outer_style = ctx.style();
-                ctx.set_style(Arc::clone(style));
+                let outer_style = ctx.global_style();
+                ctx.set_global_style(Arc::clone(style));
                 Some(outer_style)
             } else {
                 None
@@ -483,7 +483,7 @@ impl Dialogs<'_> {
             }
 
             if let Some(outer_style) = outer_style {
-                ctx.set_style(outer_style);
+                ctx.set_global_style(outer_style);
             }
 
             Some(response)

@@ -1,6 +1,8 @@
+use std::fmt::Display;
+
 use egui::{
-    include_image, vec2, Align, Align2, FontId, Image, ImageSource, Label, Layout, ScrollArea,
-    Vec2, WidgetText,
+    Align, Align2, FontId, Image, ImageSource, Label, Layout, ScrollArea, Vec2, WidgetText,
+    include_image, vec2,
 };
 use sys_locale::get_locales;
 
@@ -55,7 +57,7 @@ const STANDARD_YES_REPLY: StandardReplyTranslation = [
     ("tr", "Evet"),
 ];
 
-const STANDARD_NO_REPLY: [(&'static str, &'static str); 10] = [
+const STANDARD_NO_REPLY: [(&str, &str); 10] = [
     ("en-US", "No"),
     ("zh-CN", "否"),
     ("zh-TW", "否"),
@@ -113,18 +115,12 @@ impl StandardReply {
 
     #[inline]
     pub fn accepted(self) -> bool {
-        match self {
-            StandardReply::Ok | StandardReply::Yes => true,
-            _ => false,
-        }
+        matches!(self, StandardReply::Ok | StandardReply::Yes)
     }
 
     #[inline]
     pub fn rejected(self) -> bool {
-        match self {
-            StandardReply::Cancel | StandardReply::No => true,
-            _ => false,
-        }
+        matches!(self, StandardReply::Cancel | StandardReply::No)
     }
 }
 
@@ -134,9 +130,9 @@ impl From<StandardReply> for StandardButton<StandardReply> {
     }
 }
 
-impl ToString for StandardReply {
-    fn to_string(&self) -> String {
-        self.localize()
+impl Display for StandardReply {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.localize())
     }
 }
 
@@ -314,7 +310,7 @@ where
 
                 ui.horizontal_top(|ui| {
                     const IMAGE_WIDTH: f32 = 48.;
-                    
+
                     if let Some(image) = image {
                         ui.add(
                             Image::new(image.clone())
@@ -376,13 +372,14 @@ pub fn dialog_window<'open>(
     dctx: &DialogContext,
     title: impl Into<WidgetText>,
 ) -> egui::Window<'open> {
-    let frame = egui::Frame::window(&ctx.style()).inner_margin(16.);
+    let frame = egui::Frame::window(&ctx.global_style()).inner_margin(16.);
 
     let mut window = egui::Window::new(title.into())
         .collapsible(false)
         .resizable(false)
         .anchor(Align2::CENTER_CENTER, [0., 0.])
         .frame(frame)
+        .order(egui::Order::Foreground)
         .fade_in(dctx.animation.is_some())
         .fade_out(dctx.animation.is_some())
         .interactable(!dctx.already_closed);
