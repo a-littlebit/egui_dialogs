@@ -1,5 +1,5 @@
-use egui::{vec2, CentralPanel, Context};
-use egui_dialogs::{dialog_window, Dialog, DialogContext, DialogDetails, Dialogs, StandardReply};
+use egui::{CentralPanel, Context, vec2};
+use egui_dialogs::{Dialog, DialogContext, DialogDetails, Dialogs, StandardReply, dialog_window};
 
 fn main() -> Result<(), eframe::Error> {
     // Create native window
@@ -65,7 +65,7 @@ fn main() -> Result<(), eframe::Error> {
 // }
 
 fn setup_style(ctx: &Context) {
-    ctx.style_mut(|s| {
+    ctx.global_style_mut(|s| {
         s.spacing.item_spacing = vec2(8., 12.);
         s.spacing.button_padding = vec2(8., 6.);
 
@@ -96,7 +96,7 @@ impl DialogApp<'_> {
 }
 
 impl eframe::App for DialogApp<'_> {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ctx: &mut egui::Ui, _frame: &mut eframe::Frame) {
         const CLOSE_CONFIRM_DIALOG_ID: &str = "close_confirm_dialog";
         const NAME_CONFIRM_DIALOG_ID: &str = "name_confirm_dialog";
         const NAME_INPUT_CONFIRM_DIALOG_ID: &str = "name_input_confirm_dialog";
@@ -104,38 +104,27 @@ impl eframe::App for DialogApp<'_> {
         // Show dialogs and handle the reply if there is one
         if let Some(res) = self.dialogs.show(ctx) {
             if res.is_reply_of(CLOSE_CONFIRM_DIALOG_ID) {
-                match res.reply() {
-                    Ok(StandardReply::Yes) => {
-                        self.allow_to_close = true;
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                    }
-                    _ => {}
+                if let Ok(StandardReply::Yes) = res.reply() {
+                    self.allow_to_close = true;
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                 }
             } else if res.is_reply_of(NAME_CONFIRM_DIALOG_ID) {
-                match res.reply() {
-                    Ok(StandardReply::No) => {
-                        self.confirmed_name = "".into();
-                    }
-                    _ => {}
+                if let Ok(StandardReply::No) = res.reply() {
+                    self.confirmed_name = "".into();
                 }
-            } else if res.is_reply_of(NAME_INPUT_CONFIRM_DIALOG_ID) {
-                match res.reply() {
-                    Ok(name) => {
-                        self.confirmed_name = name;
-                    }
-                    _ => {}
-                }
+            } else if res.is_reply_of(NAME_INPUT_CONFIRM_DIALOG_ID)
+                && let Ok(name) = res.reply()
+            {
+                self.confirmed_name = name;
             }
         }
 
-        if ctx.input(|i| i.viewport().close_requested()) {
-            if !self.allow_to_close {
-                ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-                self.dialogs
-                    .confirm("Close", "Are you sure you want to close the window?", |d| {
-                        d.with_id(CLOSE_CONFIRM_DIALOG_ID)
-                    });
-            }
+        if ctx.input(|i| i.viewport().close_requested()) && !self.allow_to_close {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            self.dialogs
+                .confirm("Close", "Are you sure you want to close the window?", |d| {
+                    d.with_id(CLOSE_CONFIRM_DIALOG_ID)
+                });
         }
 
         CentralPanel::default().show(ctx, |ui| {
